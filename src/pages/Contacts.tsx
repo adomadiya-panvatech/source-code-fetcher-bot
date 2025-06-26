@@ -1,6 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Layout } from '@/components/Layout';
+import { Search, Filter, MoreHorizontal, Eye, Edit2, Phone, Mail, User, Users } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface ContactsProps {
   onOpenContactModal?: () => void;
@@ -11,6 +16,74 @@ interface ContactsProps {
   onOpenEmailModal?: () => void;
 }
 
+const fakeContacts = [
+  {
+    id: 1,
+    name: 'John Smith',
+    email: 'john.smith@techsolutions.com',
+    phone: '+1 (555) 123-4567',
+    company: 'Tech Solutions Inc',
+    position: 'CTO',
+    department: 'Technology',
+    status: 'active',
+    source: 'Website',
+    lastContact: '2024-01-15',
+    tags: ['Decision Maker', 'Technical']
+  },
+  {
+    id: 2,
+    name: 'Sarah Johnson',
+    email: 'sarah.j@globalcorp.com',
+    phone: '+1 (555) 234-5678',
+    company: 'Global Manufacturing Corp',
+    position: 'VP Sales',
+    department: 'Sales',
+    status: 'active',
+    source: 'Referral',
+    lastContact: '2024-01-12',
+    tags: ['Decision Maker', 'Sales']
+  },
+  {
+    id: 3,
+    name: 'Mike Davis',
+    email: 'mike@startupxyz.com',
+    phone: '+1 (555) 345-6789',
+    company: 'StartupXYZ',
+    position: 'Founder',
+    department: 'Executive',
+    status: 'prospect',
+    source: 'LinkedIn',
+    lastContact: '2024-01-10',
+    tags: ['Founder', 'Startup']
+  },
+  {
+    id: 4,
+    name: 'Emily Chen',
+    email: 'emily.chen@financialservices.com',
+    phone: '+1 (555) 456-7890',
+    company: 'Financial Services Ltd',
+    position: 'IT Director',
+    department: 'Technology',
+    status: 'active',
+    source: 'Cold Call',
+    lastContact: '2024-01-08',
+    tags: ['Technical', 'Finance']
+  },
+  {
+    id: 5,
+    name: 'David Wilson',
+    email: 'david.wilson@retailgiant.com',
+    phone: '+1 (555) 567-8901',
+    company: 'Retail Giant',
+    position: 'CDO',
+    department: 'Digital',
+    status: 'inactive',
+    source: 'Trade Show',
+    lastContact: '2023-12-20',
+    tags: ['Decision Maker', 'Digital']
+  }
+];
+
 const Contacts: React.FC<ContactsProps> = ({ 
   onOpenContactModal, 
   onOpenLeadModal,
@@ -19,21 +92,205 @@ const Contacts: React.FC<ContactsProps> = ({
   onOpenSMSModal,
   onOpenEmailModal
 }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+
+  const filteredContacts = fakeContacts.filter(contact => {
+    const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         contact.company.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || contact.status.toLowerCase() === filterStatus.toLowerCase();
+    return matchesSearch && matchesFilter;
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'prospect': return 'bg-blue-100 text-blue-800';
+      case 'inactive': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getSourceColor = (source: string) => {
+    switch (source) {
+      case 'Website': return 'bg-blue-100 text-blue-800';
+      case 'Referral': return 'bg-green-100 text-green-800';
+      case 'LinkedIn': return 'bg-purple-100 text-purple-800';
+      case 'Cold Call': return 'bg-orange-100 text-orange-800';
+      case 'Trade Show': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <Layout>
-      <div className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Contacts</h1>
-          <button 
+      <div className="p-6 space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Contacts</h1>
+            <p className="text-gray-600 mt-1">Manage your business contacts and relationships</p>
+          </div>
+          <Button 
             onClick={onOpenContactModal}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+            className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             Add Contact
-          </button>
+          </Button>
         </div>
-        <div className="bg-white shadow rounded-lg p-6">
-          <p className="text-gray-600">Contacts management interface will be implemented here.</p>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Total Contacts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">5</div>
+              <p className="text-sm text-green-600">+2 this week</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <User className="w-4 h-4" />
+                Active Contacts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">3</div>
+              <p className="text-sm text-blue-600">60% engagement</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Phone className="w-4 h-4" />
+                Recent Calls
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">12</div>
+              <p className="text-sm text-green-600">This week</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                <Mail className="w-4 h-4" />
+                Email Response
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">85%</div>
+              <p className="text-sm text-green-600">Response rate</p>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Filters and Search */}
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <CardTitle>All Contacts</CardTitle>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <div className="relative flex-1 sm:flex-initial">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Search contacts..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
+                  />
+                </div>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="prospect">Prospect</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Position</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Source</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Last Contact</TableHead>
+                    <TableHead>Tags</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredContacts.map((contact) => (
+                    <TableRow key={contact.id} className="hover:bg-gray-50">
+                      <TableCell className="font-medium">{contact.name}</TableCell>
+                      <TableCell>{contact.company}</TableCell>
+                      <TableCell>{contact.position}</TableCell>
+                      <TableCell className="text-blue-600">{contact.email}</TableCell>
+                      <TableCell className="text-gray-600">{contact.phone}</TableCell>
+                      <TableCell>
+                        <Badge className={getSourceColor(contact.source)}>
+                          {contact.source}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(contact.status)}>
+                          {contact.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{contact.lastContact}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 flex-wrap">
+                          {contact.tags.slice(0, 2).map((tag, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="sm" onClick={onOpenSMSModal}>
+                            <Phone className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={onOpenEmailModal}>
+                            <Mail className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            {filteredContacts.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                No contacts found matching your criteria.
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );
