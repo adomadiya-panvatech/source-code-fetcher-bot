@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
@@ -8,15 +7,35 @@ import { ActivityChart } from '@/components/ActivityChart';
 import { RecentActivities } from '@/components/RecentActivities';
 import { QuickActions } from '@/components/QuickActions';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Users, Building2, UserCheck, MessageSquare, ArrowRight, Calendar, Phone, Mail, Plus } from 'lucide-react';
+import { TrendingUp, Users, Building2, UserCheck, MessageSquare, ArrowRight, Calendar, Phone, Mail, Plus, Database } from 'lucide-react';
 
 interface IndexProps {
   onOpenContactModal?: () => void;
   onOpenLeadModal?: () => void;
+  onOpenOpportunityModal?: () => void;
+  onOpenAccountModal?: () => void;
+  onOpenSMSModal?: () => void;
+  onOpenEmailModal?: () => void;
 }
 
-const Index: React.FC<IndexProps> = ({ onOpenContactModal, onOpenLeadModal }) => {
+const Index: React.FC<IndexProps> = ({ 
+  onOpenContactModal, 
+  onOpenLeadModal,
+  onOpenOpportunityModal,
+  onOpenAccountModal,
+  onOpenSMSModal,
+  onOpenEmailModal
+}) => {
   const quickLinks = [
+    { 
+      title: 'CRM Dashboard', 
+      description: 'Customer management system', 
+      icon: Database, 
+      path: '/crm',
+      color: 'from-indigo-500 to-blue-600',
+      count: 'New Interface',
+      trend: 'Try it now'
+    },
     { 
       title: 'Opportunities', 
       description: 'Manage sales pipeline', 
@@ -196,7 +215,7 @@ const Index: React.FC<IndexProps> = ({ onOpenContactModal, onOpenLeadModal }) =>
         {/* Quick Access Cards */}
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-slate-800 dark:text-white mb-6">Quick Access</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             {quickLinks.map((link) => {
               const Icon = link.icon;
               return (
@@ -234,8 +253,12 @@ const Index: React.FC<IndexProps> = ({ onOpenContactModal, onOpenLeadModal }) =>
           </div>
           <div>
             <QuickActions 
-              onAddContact={onOpenContactModal || (() => {})}
-              onAddLead={onOpenLeadModal || (() => {})}
+              onAddContact={onOpenContactModal}
+              onAddLead={onOpenLeadModal}
+              onOpenOpportunityModal={onOpenOpportunityModal}
+              onOpenAccountModal={onOpenAccountModal}
+              onOpenSMSModal={onOpenSMSModal}
+              onOpenEmailModal={onOpenEmailModal}
             />
           </div>
         </div>
