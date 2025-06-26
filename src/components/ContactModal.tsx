@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { X, User, Mail, Phone, Building2, MapPin } from 'lucide-react';
+import { useCreateContact } from '@/hooks/useContacts';
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface ContactModalProps {
 
 export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
+    name: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -16,27 +18,46 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) =
     company: '',
     position: '',
     address: '',
-    notes: ''
+    notes: '',
+    source: 'Website',
+    status: 'active'
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const createContactMutation = useCreateContact();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Contact data:', formData);
-    onClose();
-    // Reset form
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      company: '',
-      position: '',
-      address: '',
-      notes: ''
-    });
+    
+    try {
+      const contactData = {
+        ...formData,
+        name: `${formData.firstName} ${formData.lastName}`.trim() || formData.name,
+      };
+      
+      await createContactMutation.mutateAsync(contactData);
+      console.log('Contact created successfully');
+      onClose();
+      
+      // Reset form
+      setFormData({
+        name: '',
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        company: '',
+        position: '',
+        address: '',
+        notes: '',
+        source: 'Website',
+        status: 'active'
+      });
+    } catch (error) {
+      console.error('Error creating contact:', error);
+    }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
@@ -162,6 +183,43 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) =
               />
             </div>
           </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Source
+              </label>
+              <select
+                name="source"
+                value={formData.source}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+              >
+                <option value="Website">Website</option>
+                <option value="LinkedIn">LinkedIn</option>
+                <option value="Referral">Referral</option>
+                <option value="Cold Call">Cold Call</option>
+                <option value="Trade Show">Trade Show</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Status
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+              >
+                <option value="active">Active</option>
+                <option value="prospect">Prospect</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
           
           <div className="mb-4">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -202,9 +260,10 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) =
             </button>
             <button
               type="submit"
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+              disabled={createContactMutation.isPending}
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Add Contact
+              {createContactMutation.isPending ? 'Creating...' : 'Add Contact'}
             </button>
           </div>
         </form>

@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useLeads, useLeadStats, useDeleteLead } from '@/hooks/useLeads';
 
 interface LeadsProps {
   onOpenContactModal?: () => void;
@@ -15,84 +16,6 @@ interface LeadsProps {
   onOpenSMSModal?: () => void;
   onOpenEmailModal?: () => void;
 }
-
-const fakeLeads = [
-  {
-    id: 1,
-    name: 'Alex Martinez',
-    email: 'alex.martinez@acmecorp.com',
-    phone: '+1 (555) 111-2222',
-    company: 'Acme Corporation',
-    jobTitle: 'IT Manager',
-    source: 'Website Form',
-    score: 85,
-    status: 'qualified',
-    assignedTo: 'John Smith',
-    createdDate: '2024-01-14',
-    lastActivity: '2024-01-15',
-    interest: 'Enterprise Software'
-  },
-  {
-    id: 2,
-    name: 'Jennifer Lopez',
-    email: 'j.lopez@innovatetech.com',
-    phone: '+1 (555) 222-3333',
-    company: 'Innovate Tech',
-    jobTitle: 'CIO',
-    source: 'LinkedIn',
-    score: 92,
-    status: 'hot',
-    assignedTo: 'Sarah Johnson',
-    createdDate: '2024-01-13',
-    lastActivity: '2024-01-15',
-    interest: 'Cloud Migration'
-  },
-  {
-    id: 3,
-    name: 'Robert Brown',
-    email: 'r.brown@newstartup.io',
-    phone: '+1 (555) 333-4444',
-    company: 'New Startup',
-    jobTitle: 'Founder',
-    source: 'Referral',
-    score: 70,
-    status: 'warm',
-    assignedTo: 'Mike Davis',
-    createdDate: '2024-01-12',
-    lastActivity: '2024-01-14',
-    interest: 'SaaS Platform'
-  },
-  {
-    id: 4,
-    name: 'Lisa Wang',
-    email: 'lisa.wang@enterprise.com',
-    phone: '+1 (555) 444-5555',
-    company: 'Enterprise Solutions',
-    jobTitle: 'VP Technology',
-    source: 'Trade Show',
-    score: 78,
-    status: 'qualified',
-    assignedTo: 'Emily Chen',
-    createdDate: '2024-01-11',
-    lastActivity: '2024-01-13',
-    interest: 'Security Solutions'
-  },
-  {
-    id: 5,
-    name: 'Mark Thompson',
-    email: 'mark.t@smallbiz.com',
-    phone: '+1 (555) 555-6666',
-    company: 'Small Business Inc',
-    jobTitle: 'Owner',
-    source: 'Cold Call',
-    score: 45,
-    status: 'cold',
-    assignedTo: 'David Wilson',
-    createdDate: '2024-01-10',
-    lastActivity: '2024-01-11',
-    interest: 'Basic Package'
-  }
-];
 
 const Leads: React.FC<LeadsProps> = ({ 
   onOpenContactModal, 
@@ -105,11 +28,15 @@ const Leads: React.FC<LeadsProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  const filteredLeads = fakeLeads.filter(lead => {
-    const matchesSearch = lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         lead.company.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || lead.status.toLowerCase() === filterStatus.toLowerCase();
+  const { data: leads = [], isLoading: leadsLoading, error: leadsError } = useLeads();
+  const { data: stats } = useLeadStats();
+  const deleteLeadMutation = useDeleteLead();
+
+  const filteredLeads = leads.filter((lead: any) => {
+    const matchesSearch = lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         lead.company?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || lead.status?.toLowerCase() === filterStatus.toLowerCase();
     return matchesSearch && matchesFilter;
   });
 
@@ -140,6 +67,24 @@ const Leads: React.FC<LeadsProps> = ({
     }
   };
 
+  const handleDeleteLead = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this lead?')) {
+      deleteLeadMutation.mutate(id);
+    }
+  };
+
+  if (leadsError) {
+    return (
+      <Layout>
+        <div className="p-6">
+          <div className="text-center py-8 text-red-600">
+            Error loading leads: {leadsError.message}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="p-6 space-y-6">
@@ -167,8 +112,12 @@ const Leads: React.FC<LeadsProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">5</div>
-              <p className="text-sm text-green-600">+3 this week</p>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats?.total || leads.length}
+              </div>
+              <p className="text-sm text-green-600">
+                {stats?.growth || '+3 this week'}
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -179,8 +128,12 @@ const Leads: React.FC<LeadsProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">2</div>
-              <p className="text-sm text-blue-600">40% conversion</p>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats?.qualified || leads.filter((l: any) => l.status === 'qualified').length}
+              </div>
+              <p className="text-sm text-blue-600">
+                {stats?.conversionRate || '40% conversion'}
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -191,7 +144,9 @@ const Leads: React.FC<LeadsProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">1</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats?.hot || leads.filter((l: any) => l.status === 'hot').length}
+              </div>
               <p className="text-sm text-red-600">High priority</p>
             </CardContent>
           </Card>
@@ -203,7 +158,9 @@ const Leads: React.FC<LeadsProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">74</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats?.averageScore || '74'}
+              </div>
               <p className="text-sm text-yellow-600">Good quality</p>
             </CardContent>
           </Card>
@@ -240,67 +197,78 @@ const Leads: React.FC<LeadsProps> = ({
             </div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Job Title</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Score</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Assigned To</TableHead>
-                    <TableHead>Last Activity</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredLeads.map((lead) => (
-                    <TableRow key={lead.id} className="hover:bg-gray-50">
-                      <TableCell className="font-medium">{lead.name}</TableCell>
-                      <TableCell>{lead.company}</TableCell>
-                      <TableCell>{lead.jobTitle}</TableCell>
-                      <TableCell className="text-blue-600">{lead.email}</TableCell>
-                      <TableCell className="text-gray-600">{lead.phone}</TableCell>
-                      <TableCell>
-                        <Badge className={getSourceColor(lead.source)}>
-                          {lead.source}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className={`font-semibold ${getScoreColor(lead.score)}`}>
-                          {lead.score}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(lead.status)}>
-                          {lead.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{lead.assignedTo}</TableCell>
-                      <TableCell>{lead.lastActivity}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+            {leadsLoading ? (
+              <div className="text-center py-8 text-gray-500">
+                Loading leads...
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Job Title</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Source</TableHead>
+                      <TableHead>Score</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Assigned To</TableHead>
+                      <TableHead>Last Activity</TableHead>
+                      <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            {filteredLeads.length === 0 && (
+                  </TableHeader>
+                  <TableBody>
+                    {filteredLeads.map((lead: any) => (
+                      <TableRow key={lead.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{lead.name}</TableCell>
+                        <TableCell>{lead.company}</TableCell>
+                        <TableCell>{lead.jobTitle || lead.position}</TableCell>
+                        <TableCell className="text-blue-600">{lead.email}</TableCell>
+                        <TableCell className="text-gray-600">{lead.phone}</TableCell>
+                        <TableCell>
+                          <Badge className={getSourceColor(lead.source || 'Other')}>
+                            {lead.source || 'Other'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`font-semibold ${getScoreColor(lead.score || 0)}`}>
+                            {lead.score || 0}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(lead.status || 'cold')}>
+                            {lead.status || 'cold'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{lead.assignedTo || lead.owner}</TableCell>
+                        <TableCell>{lead.lastActivity || lead.updatedAt}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm">
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleDeleteLead(lead.id)}
+                              disabled={deleteLeadMutation.isPending}
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+            {!leadsLoading && filteredLeads.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 No leads found matching your criteria.
               </div>

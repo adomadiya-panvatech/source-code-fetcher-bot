@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useContacts, useContactStats, useDeleteContact } from '@/hooks/useContacts';
 
 interface ContactsProps {
   onOpenContactModal?: () => void;
@@ -15,74 +16,6 @@ interface ContactsProps {
   onOpenSMSModal?: () => void;
   onOpenEmailModal?: () => void;
 }
-
-const fakeContacts = [
-  {
-    id: 1,
-    name: 'John Smith',
-    email: 'john.smith@techsolutions.com',
-    phone: '+1 (555) 123-4567',
-    company: 'Tech Solutions Inc',
-    position: 'CTO',
-    department: 'Technology',
-    status: 'active',
-    source: 'Website',
-    lastContact: '2024-01-15',
-    tags: ['Decision Maker', 'Technical']
-  },
-  {
-    id: 2,
-    name: 'Sarah Johnson',
-    email: 'sarah.j@globalcorp.com',
-    phone: '+1 (555) 234-5678',
-    company: 'Global Manufacturing Corp',
-    position: 'VP Sales',
-    department: 'Sales',
-    status: 'active',
-    source: 'Referral',
-    lastContact: '2024-01-12',
-    tags: ['Decision Maker', 'Sales']
-  },
-  {
-    id: 3,
-    name: 'Mike Davis',
-    email: 'mike@startupxyz.com',
-    phone: '+1 (555) 345-6789',
-    company: 'StartupXYZ',
-    position: 'Founder',
-    department: 'Executive',
-    status: 'prospect',
-    source: 'LinkedIn',
-    lastContact: '2024-01-10',
-    tags: ['Founder', 'Startup']
-  },
-  {
-    id: 4,
-    name: 'Emily Chen',
-    email: 'emily.chen@financialservices.com',
-    phone: '+1 (555) 456-7890',
-    company: 'Financial Services Ltd',
-    position: 'IT Director',
-    department: 'Technology',
-    status: 'active',
-    source: 'Cold Call',
-    lastContact: '2024-01-08',
-    tags: ['Technical', 'Finance']
-  },
-  {
-    id: 5,
-    name: 'David Wilson',
-    email: 'david.wilson@retailgiant.com',
-    phone: '+1 (555) 567-8901',
-    company: 'Retail Giant',
-    position: 'CDO',
-    department: 'Digital',
-    status: 'inactive',
-    source: 'Trade Show',
-    lastContact: '2023-12-20',
-    tags: ['Decision Maker', 'Digital']
-  }
-];
 
 const Contacts: React.FC<ContactsProps> = ({ 
   onOpenContactModal, 
@@ -95,11 +28,15 @@ const Contacts: React.FC<ContactsProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  const filteredContacts = fakeContacts.filter(contact => {
-    const matchesSearch = contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         contact.company.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || contact.status.toLowerCase() === filterStatus.toLowerCase();
+  const { data: contacts = [], isLoading: contactsLoading, error: contactsError } = useContacts();
+  const { data: stats } = useContactStats();
+  const deleteContactMutation = useDeleteContact();
+
+  const filteredContacts = contacts.filter((contact: any) => {
+    const matchesSearch = contact.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         contact.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         contact.company?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || contact.status?.toLowerCase() === filterStatus.toLowerCase();
     return matchesSearch && matchesFilter;
   });
 
@@ -122,6 +59,24 @@ const Contacts: React.FC<ContactsProps> = ({
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const handleDeleteContact = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this contact?')) {
+      deleteContactMutation.mutate(id);
+    }
+  };
+
+  if (contactsError) {
+    return (
+      <Layout>
+        <div className="p-6">
+          <div className="text-center py-8 text-red-600">
+            Error loading contacts: {contactsError.message}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -150,8 +105,12 @@ const Contacts: React.FC<ContactsProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">5</div>
-              <p className="text-sm text-green-600">+2 this week</p>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats?.total || contacts.length}
+              </div>
+              <p className="text-sm text-green-600">
+                {stats?.growth || '+2 this week'}
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -162,8 +121,12 @@ const Contacts: React.FC<ContactsProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">3</div>
-              <p className="text-sm text-blue-600">60% engagement</p>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats?.active || contacts.filter((c: any) => c.status === 'active').length}
+              </div>
+              <p className="text-sm text-blue-600">
+                {stats?.engagement || '60% engagement'}
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -174,7 +137,9 @@ const Contacts: React.FC<ContactsProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">12</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats?.recentCalls || '12'}
+              </div>
               <p className="text-sm text-green-600">This week</p>
             </CardContent>
           </Card>
@@ -186,7 +151,9 @@ const Contacts: React.FC<ContactsProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">85%</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats?.emailResponse || '85%'}
+              </div>
               <p className="text-sm text-green-600">Response rate</p>
             </CardContent>
           </Card>
@@ -222,69 +189,80 @@ const Contacts: React.FC<ContactsProps> = ({
             </div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Position</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Last Contact</TableHead>
-                    <TableHead>Tags</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredContacts.map((contact) => (
-                    <TableRow key={contact.id} className="hover:bg-gray-50">
-                      <TableCell className="font-medium">{contact.name}</TableCell>
-                      <TableCell>{contact.company}</TableCell>
-                      <TableCell>{contact.position}</TableCell>
-                      <TableCell className="text-blue-600">{contact.email}</TableCell>
-                      <TableCell className="text-gray-600">{contact.phone}</TableCell>
-                      <TableCell>
-                        <Badge className={getSourceColor(contact.source)}>
-                          {contact.source}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(contact.status)}>
-                          {contact.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{contact.lastContact}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1 flex-wrap">
-                          {contact.tags.slice(0, 2).map((tag, index) => (
-                            <Badge key={index} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm" onClick={onOpenSMSModal}>
-                            <Phone className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={onOpenEmailModal}>
-                            <Mail className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+            {contactsLoading ? (
+              <div className="text-center py-8 text-gray-500">
+                Loading contacts...
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Position</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Source</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Last Contact</TableHead>
+                      <TableHead>Tags</TableHead>
+                      <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            {filteredContacts.length === 0 && (
+                  </TableHeader>
+                  <TableBody>
+                    {filteredContacts.map((contact: any) => (
+                      <TableRow key={contact.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{contact.name}</TableCell>
+                        <TableCell>{contact.company}</TableCell>
+                        <TableCell>{contact.position}</TableCell>
+                        <TableCell className="text-blue-600">{contact.email}</TableCell>
+                        <TableCell className="text-gray-600">{contact.phone}</TableCell>
+                        <TableCell>
+                          <Badge className={getSourceColor(contact.source || 'Other')}>
+                            {contact.source || 'Other'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(contact.status || 'active')}>
+                            {contact.status || 'active'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{contact.lastContact || contact.updatedAt}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1 flex-wrap">
+                            {(contact.tags || []).slice(0, 2).map((tag: string, index: number) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm" onClick={onOpenSMSModal}>
+                              <Phone className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={onOpenEmailModal}>
+                              <Mail className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleDeleteContact(contact.id)}
+                              disabled={deleteContactMutation.isPending}
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+            {!contactsLoading && filteredContacts.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 No contacts found matching your criteria.
               </div>
