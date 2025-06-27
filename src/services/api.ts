@@ -13,6 +13,15 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}) =>
     },
   };
 
+  // Add auth token if available
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    config.headers = {
+      ...config.headers,
+      'Authorization': `Bearer ${token}`,
+    };
+  }
+
   const response = await fetch(url, config);
   
   if (!response.ok) {

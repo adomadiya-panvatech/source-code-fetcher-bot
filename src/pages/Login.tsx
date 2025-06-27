@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, BarChart3, Sparkles, Shield, Zap, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { api } from '@/services/api';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -42,18 +42,30 @@ const Login = () => {
     setIsLoading(true);
     setLoginMessage('');
     
-    // Simulate API call
-    setTimeout(() => {
-      // Demo credentials check
-      if (email === 'admin@company.com' && password === 'password') {
+    try {
+      const response = await api.login({ email, password });
+      
+      if (response.success) {
         setLoginMessage('Login successful! Redirecting...');
-        localStorage.setItem('user', JSON.stringify({ email, name: 'John Doe' }));
+        
+        // Store authentication data
+        if (response.token) {
+          localStorage.setItem('authToken', response.token);
+        }
+        if (response.user) {
+          localStorage.setItem('user', JSON.stringify(response.user));
+        }
+        
         setTimeout(() => navigate('/'), 1000);
       } else {
-        setLoginMessage('Invalid credentials. Try admin@company.com / password');
+        setLoginMessage(response.message || 'Login failed. Please try again.');
       }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setLoginMessage(error.message || 'Login failed. Please check your credentials and try again.');
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const features = [
