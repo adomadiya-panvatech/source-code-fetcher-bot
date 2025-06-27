@@ -295,12 +295,16 @@ const Contacts: React.FC<ContactsProps> = ({
                               >
                                 <Edit2 className="w-4 h-4" />
                               </Button>
-                              <Button variant="ghost" size="sm" onClick={onOpenSMSModal}>
-                                <Phone className="w-4 h-4" />
-                              </Button>
-                              <Button variant="ghost" size="sm" onClick={onOpenEmailModal}>
-                                <Mail className="w-4 h-4" />
-                              </Button>
+                              {onOpenSMSModal && (
+                                <Button variant="ghost" size="sm" onClick={onOpenSMSModal}>
+                                  <Phone className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {onOpenEmailModal && (
+                                <Button variant="ghost" size="sm" onClick={onOpenEmailModal}>
+                                  <Mail className="w-4 h-4" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
