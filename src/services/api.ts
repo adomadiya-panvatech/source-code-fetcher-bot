@@ -1,4 +1,3 @@
-
 const API_BASE_URL = 'http://localhost:5000';
 
 // API utility functions
@@ -22,13 +21,18 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}) =>
     };
   }
 
-  const response = await fetch(url, config);
-  
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+  try {
+    const response = await fetch(url, config);
+    
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error(`API request failed for ${endpoint}:`, error);
+    throw error;
   }
-  
-  return response.json();
 };
 
 export const api = {

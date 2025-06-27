@@ -34,14 +34,24 @@ const Contacts: React.FC<ContactsProps> = ({
   const [editModalOpen, setEditModalOpen] = useState(false);
 
   const { data: contacts = [], isLoading: contactsLoading, error: contactsError } = useContacts();
-  const { data: stats } = useContactStats();
+  const { data: stats, error: statsError } = useContactStats();
   const deleteContactMutation = useDeleteContact();
 
-  const filteredContacts = contacts.filter((contact: any) => {
-    const matchesSearch = contact.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         contact.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         contact.company?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || contact.status?.toLowerCase() === filterStatus.toLowerCase();
+  // Handle potential data issues
+  const safeContacts = Array.isArray(contacts) ? contacts : [];
+  const safeStats = stats || {};
+
+  const filteredContacts = safeContacts.filter((contact: any) => {
+    if (!contact) return false;
+    
+    const name = contact.name || '';
+    const email = contact.email || '';
+    const company = contact.company || '';
+    
+    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         company.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || (contact.status || 'active').toLowerCase() === filterStatus.toLowerCase();
     return matchesSearch && matchesFilter;
   });
 
@@ -86,12 +96,19 @@ const Contacts: React.FC<ContactsProps> = ({
     setEditModalOpen(true);
   };
 
+  // Error handling
   if (contactsError) {
+    console.error('Contacts error:', contactsError);
     return (
       <Layout>
         <div className="p-6">
-          <div className="text-center py-8 text-red-600">
-            Error loading contacts: {contactsError.message}
+          <div className="text-center py-8">
+            <div className="text-red-600 mb-4">
+              Unable to load contacts. Please try again.
+            </div>
+            <Button onClick={() => window.location.reload()}>
+              Refresh Page
+            </Button>
           </div>
         </div>
       </Layout>
@@ -126,10 +143,10 @@ const Contacts: React.FC<ContactsProps> = ({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">
-                {stats?.total || contacts.length}
+                {safeStats.total || safeContacts.length}
               </div>
               <p className="text-sm text-green-600">
-                {stats?.growth || '+2 this week'}
+                {safeStats.growth || '+2 this week'}
               </p>
             </CardContent>
           </Card>
@@ -142,10 +159,10 @@ const Contacts: React.FC<ContactsProps> = ({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">
-                {stats?.active || contacts.filter((c: any) => c.status === 'active').length}
+                {safeStats.active || safeContacts.filter((c: any) => (c?.status || 'active') === 'active').length}
               </div>
               <p className="text-sm text-blue-600">
-                {stats?.engagement || '60% engagement'}
+                {safeStats.engagement || '60% engagement'}
               </p>
             </CardContent>
           </Card>
@@ -158,7 +175,7 @@ const Contacts: React.FC<ContactsProps> = ({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">
-                {stats?.recentCalls || '12'}
+                {safeStats.recentCalls || '12'}
               </div>
               <p className="text-sm text-green-600">This week</p>
             </CardContent>
@@ -172,7 +189,7 @@ const Contacts: React.FC<ContactsProps> = ({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">
-                {stats?.emailResponse || '85%'}
+                {safeStats.emailResponse || '85%'}
               </div>
               <p className="text-sm text-green-600">Response rate</p>
             </CardContent>
@@ -231,59 +248,64 @@ const Contacts: React.FC<ContactsProps> = ({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredContacts.map((contact: any) => (
-                      <TableRow key={contact.id} className="hover:bg-gray-50">
-                        <TableCell className="font-medium">{contact.name}</TableCell>
-                        <TableCell>{contact.company}</TableCell>
-                        <TableCell>{contact.position}</TableCell>
-                        <TableCell className="text-blue-600">{contact.email}</TableCell>
-                        <TableCell className="text-gray-600">{contact.phone}</TableCell>
-                        <TableCell>
-                          <Badge className={getSourceColor(contact.source || 'Other')}>
-                            {contact.source || 'Other'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getStatusColor(contact.status || 'active')}>
-                            {contact.status || 'active'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{contact.lastContact || contact.updatedAt}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-1 flex-wrap">
-                            {(contact.tags || []).slice(0, 2).map((tag: string, index: number) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleViewContact(contact)}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleEditContact(contact)}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={onOpenSMSModal}>
-                              <Phone className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={onOpenEmailModal}>
-                              <Mail className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {filteredContacts.map((contact: any, index: number) => {
+                      // Provide fallback id if contact doesn't have one
+                      const contactId = contact?.id || `contact-${index}`;
+                      
+                      return (
+                        <TableRow key={contactId} className="hover:bg-gray-50">
+                          <TableCell className="font-medium">{contact?.name || 'N/A'}</TableCell>
+                          <TableCell>{contact?.company || 'N/A'}</TableCell>
+                          <TableCell>{contact?.position || 'N/A'}</TableCell>
+                          <TableCell className="text-blue-600">{contact?.email || 'N/A'}</TableCell>
+                          <TableCell className="text-gray-600">{contact?.phone || 'N/A'}</TableCell>
+                          <TableCell>
+                            <Badge className={getSourceColor(contact?.source || 'Other')}>
+                              {contact?.source || 'Other'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(contact?.status || 'active')}>
+                              {contact?.status || 'active'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{contact?.lastContact || contact?.updatedAt || 'N/A'}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1 flex-wrap">
+                              {(contact?.tags || []).slice(0, 2).map((tag: string, tagIndex: number) => (
+                                <Badge key={tagIndex} variant="outline" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleViewContact(contact)}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleEditContact(contact)}
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={onOpenSMSModal}>
+                                <Phone className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={onOpenEmailModal}>
+                                <Mail className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -298,18 +320,22 @@ const Contacts: React.FC<ContactsProps> = ({
       </div>
 
       {/* Modals */}
-      <ContactViewModal
-        isOpen={viewModalOpen}
-        onClose={() => setViewModalOpen(false)}
-        contact={selectedContact}
-        onEdit={handleEditFromView}
-      />
-      
-      <ContactEditModal
-        isOpen={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-        contact={selectedContact}
-      />
+      {selectedContact && (
+        <>
+          <ContactViewModal
+            isOpen={viewModalOpen}
+            onClose={() => setViewModalOpen(false)}
+            contact={selectedContact}
+            onEdit={handleEditFromView}
+          />
+          
+          <ContactEditModal
+            isOpen={editModalOpen}
+            onClose={() => setEditModalOpen(false)}
+            contact={selectedContact}
+          />
+        </>
+      )}
     </Layout>
   );
 };
