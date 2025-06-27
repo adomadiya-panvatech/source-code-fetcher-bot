@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useLeads, useLeadStats, useDeleteLead } from '@/hooks/useLeads';
+import { LeadViewModal } from '@/components/LeadViewModal';
+import { LeadEditModal } from '@/components/LeadEditModal';
 
 interface LeadsProps {
   onOpenContactModal?: () => void;
@@ -27,6 +29,9 @@ const Leads: React.FC<LeadsProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [selectedLead, setSelectedLead] = useState<any>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const { data: leads = [], isLoading: leadsLoading, error: leadsError } = useLeads();
   const { data: stats } = useLeadStats();
@@ -71,6 +76,21 @@ const Leads: React.FC<LeadsProps> = ({
     if (window.confirm('Are you sure you want to delete this lead?')) {
       deleteLeadMutation.mutate(id);
     }
+  };
+
+  const handleViewLead = (lead: any) => {
+    setSelectedLead(lead);
+    setViewModalOpen(true);
+  };
+
+  const handleEditLead = (lead: any) => {
+    setSelectedLead(lead);
+    setEditModalOpen(true);
+  };
+
+  const handleEditFromView = () => {
+    setViewModalOpen(false);
+    setEditModalOpen(true);
   };
 
   if (leadsError) {
@@ -246,10 +266,18 @@ const Leads: React.FC<LeadsProps> = ({
                         <TableCell>{lead.lastActivity || lead.updatedAt}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleViewLead(lead)}
+                            >
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleEditLead(lead)}
+                            >
                               <Edit2 className="w-4 h-4" />
                             </Button>
                             <Button 
@@ -276,6 +304,24 @@ const Leads: React.FC<LeadsProps> = ({
           </CardContent>
         </Card>
       </div>
+
+      {/* Modals */}
+      {selectedLead && (
+        <>
+          <LeadViewModal
+            isOpen={viewModalOpen}
+            onClose={() => setViewModalOpen(false)}
+            lead={selectedLead}
+            onEdit={handleEditFromView}
+          />
+          
+          <LeadEditModal
+            isOpen={editModalOpen}
+            onClose={() => setEditModalOpen(false)}
+            lead={selectedLead}
+          />
+        </>
+      )}
     </Layout>
   );
 };

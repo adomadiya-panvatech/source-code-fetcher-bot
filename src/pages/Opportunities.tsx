@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useOpportunities, useOpportunityStats, useDeleteOpportunity } from '@/hooks/useOpportunities';
+import { OpportunityViewModal } from '@/components/OpportunityViewModal';
+import { OpportunityEditModal } from '@/components/OpportunityEditModal';
 
 interface OpportunitiesProps {
   onOpenContactModal?: () => void;
@@ -27,6 +29,9 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStage, setFilterStage] = useState('all');
+  const [selectedOpportunity, setSelectedOpportunity] = useState<any>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const { data: opportunities = [], isLoading: opportunitiesLoading, error: opportunitiesError } = useOpportunities();
   const { data: stats } = useOpportunityStats();
@@ -63,6 +68,21 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
     if (window.confirm('Are you sure you want to delete this opportunity?')) {
       deleteOpportunityMutation.mutate(id);
     }
+  };
+
+  const handleViewOpportunity = (opportunity: any) => {
+    setSelectedOpportunity(opportunity);
+    setViewModalOpen(true);
+  };
+
+  const handleEditOpportunity = (opportunity: any) => {
+    setSelectedOpportunity(opportunity);
+    setEditModalOpen(true);
+  };
+
+  const handleEditFromView = () => {
+    setViewModalOpen(false);
+    setEditModalOpen(true);
   };
 
   if (opportunitiesError) {
@@ -219,10 +239,18 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleViewOpportunity(opportunity)}
+                            >
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleEditOpportunity(opportunity)}
+                            >
                               <Edit2 className="w-4 h-4" />
                             </Button>
                             <Button 
@@ -249,6 +277,24 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
           </CardContent>
         </Card>
       </div>
+
+      {/* Modals */}
+      {selectedOpportunity && (
+        <>
+          <OpportunityViewModal
+            isOpen={viewModalOpen}
+            onClose={() => setViewModalOpen(false)}
+            opportunity={selectedOpportunity}
+            onEdit={handleEditFromView}
+          />
+          
+          <OpportunityEditModal
+            isOpen={editModalOpen}
+            onClose={() => setEditModalOpen(false)}
+            opportunity={selectedOpportunity}
+          />
+        </>
+      )}
     </Layout>
   );
 };

@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AccountViewModal } from '@/components/AccountViewModal';
+import { AccountEditModal } from '@/components/AccountEditModal';
 
 interface AccountsProps {
   onOpenContactModal?: () => void;
@@ -89,6 +91,9 @@ const Accounts: React.FC<AccountsProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [selectedAccount, setSelectedAccount] = useState<any>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const filteredAccounts = fakeAccounts.filter(account => {
     const matchesSearch = account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -113,6 +118,21 @@ const Accounts: React.FC<AccountsProps> = ({
       case 'SMB': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const handleViewAccount = (account: any) => {
+    setSelectedAccount(account);
+    setViewModalOpen(true);
+  };
+
+  const handleEditAccount = (account: any) => {
+    setSelectedAccount(account);
+    setEditModalOpen(true);
+  };
+
+  const handleEditFromView = () => {
+    setViewModalOpen(false);
+    setEditModalOpen(true);
   };
 
   return (
@@ -249,10 +269,18 @@ const Accounts: React.FC<AccountsProps> = ({
                       <TableCell>{account.lastContact}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleViewAccount(account)}
+                          >
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEditAccount(account)}
+                          >
                             <Edit2 className="w-4 h-4" />
                           </Button>
                           <Button variant="ghost" size="sm">
@@ -273,6 +301,24 @@ const Accounts: React.FC<AccountsProps> = ({
           </CardContent>
         </Card>
       </div>
+
+      {/* Modals */}
+      {selectedAccount && (
+        <>
+          <AccountViewModal
+            isOpen={viewModalOpen}
+            onClose={() => setViewModalOpen(false)}
+            account={selectedAccount}
+            onEdit={handleEditFromView}
+          />
+          
+          <AccountEditModal
+            isOpen={editModalOpen}
+            onClose={() => setEditModalOpen(false)}
+            account={selectedAccount}
+          />
+        </>
+      )}
     </Layout>
   );
 };

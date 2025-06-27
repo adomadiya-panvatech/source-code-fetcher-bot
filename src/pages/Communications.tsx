@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CommunicationViewModal } from '@/components/CommunicationViewModal';
 
 interface CommunicationsProps {
   onOpenContactModal?: () => void;
@@ -89,6 +90,8 @@ const Communications: React.FC<CommunicationsProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [selectedCommunication, setSelectedCommunication] = useState<any>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
 
   const filteredCommunications = fakeCommunications.filter(comm => {
     const matchesSearch = comm.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -129,6 +132,11 @@ const Communications: React.FC<CommunicationsProps> = ({
 
   const getDirectionColor = (direction: string) => {
     return direction === 'inbound' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800';
+  };
+
+  const handleViewCommunication = (communication: any) => {
+    setSelectedCommunication(communication);
+    setViewModalOpen(true);
   };
 
   return (
@@ -283,7 +291,11 @@ const Communications: React.FC<CommunicationsProps> = ({
                       <TableCell>{communication.assignedTo}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleViewCommunication(communication)}
+                          >
                             <Eye className="w-4 h-4" />
                           </Button>
                           <Button variant="ghost" size="sm">
@@ -307,6 +319,15 @@ const Communications: React.FC<CommunicationsProps> = ({
           </CardContent>
         </Card>
       </div>
+
+      {/* View Modal */}
+      {selectedCommunication && (
+        <CommunicationViewModal
+          isOpen={viewModalOpen}
+          onClose={() => setViewModalOpen(false)}
+          communication={selectedCommunication}
+        />
+      )}
     </Layout>
   );
 };
