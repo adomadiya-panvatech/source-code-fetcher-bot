@@ -53,18 +53,6 @@ export const useDeleteLead = () => {
   });
 };
 
-export const useAssignLead = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: ({ id, userId }: { id: string; userId: string }) => 
-      api.assignLead(id, userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-    },
-  });
-};
-
 export const useLeadStats = () => {
   return useQuery({
     queryKey: ['leads-stats'],

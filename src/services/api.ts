@@ -118,4 +118,15 @@ export const api = {
     }),
   
   getOpportunityStats: () => apiRequest('/api/opportunities/stats'),
+
+  // Dashboard endpoints
+  getDashboardSummary: () => apiRequest('/dashboard/summary'),
+  
+  getConversionRate: () => apiRequest('/dashboard/conversion-rate'),
+  
+  getTopPerformers: () => apiRequest('/dashboard/top-performers'),
+  
+  getMonthlyStats: () => apiRequest('/dashboard/monthly-stats'),
+  
+  getRecentActivity: () => apiRequest('/dashboard/recent-activity'),
 };
