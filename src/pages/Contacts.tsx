@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useContacts, useContactStats, useDeleteContact } from '@/hooks/useContacts';
+import { ContactViewModal } from '@/components/ContactViewModal';
+import { ContactEditModal } from '@/components/ContactEditModal';
 
 interface ContactsProps {
   onOpenContactModal?: () => void;
@@ -27,6 +29,9 @@ const Contacts: React.FC<ContactsProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [selectedContact, setSelectedContact] = useState<any>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   const { data: contacts = [], isLoading: contactsLoading, error: contactsError } = useContacts();
   const { data: stats } = useContactStats();
@@ -64,6 +69,21 @@ const Contacts: React.FC<ContactsProps> = ({
     if (window.confirm('Are you sure you want to delete this contact?')) {
       deleteContactMutation.mutate(id);
     }
+  };
+
+  const handleViewContact = (contact: any) => {
+    setSelectedContact(contact);
+    setViewModalOpen(true);
+  };
+
+  const handleEditContact = (contact: any) => {
+    setSelectedContact(contact);
+    setEditModalOpen(true);
+  };
+
+  const handleEditFromView = () => {
+    setViewModalOpen(false);
+    setEditModalOpen(true);
   };
 
   if (contactsError) {
@@ -207,7 +227,7 @@ const Contacts: React.FC<ContactsProps> = ({
                       <TableHead>Status</TableHead>
                       <TableHead>Last Contact</TableHead>
                       <TableHead>Tags</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
+                      <TableHead className="w-[150px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -239,20 +259,26 @@ const Contacts: React.FC<ContactsProps> = ({
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleViewContact(contact)}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleEditContact(contact)}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
                             <Button variant="ghost" size="sm" onClick={onOpenSMSModal}>
                               <Phone className="w-4 h-4" />
                             </Button>
                             <Button variant="ghost" size="sm" onClick={onOpenEmailModal}>
                               <Mail className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleDeleteContact(contact.id)}
-                              disabled={deleteContactMutation.isPending}
-                            >
-                              <MoreHorizontal className="w-4 h-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -270,6 +296,20 @@ const Contacts: React.FC<ContactsProps> = ({
           </CardContent>
         </Card>
       </div>
+
+      {/* Modals */}
+      <ContactViewModal
+        isOpen={viewModalOpen}
+        onClose={() => setViewModalOpen(false)}
+        contact={selectedContact}
+        onEdit={handleEditFromView}
+      />
+      
+      <ContactEditModal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        contact={selectedContact}
+      />
     </Layout>
   );
 };

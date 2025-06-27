@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 
 interface User {
@@ -50,4 +51,23 @@ export const useAuth = () => {
     logout,
     checkAuthStatus,
   };
+};
+
+export const useProfile = () => {
+  return useQuery({
+    queryKey: ['profile'],
+    queryFn: api.getProfile,
+    enabled: !!localStorage.getItem('authToken'),
+  });
+};
+
+export const useUpdateProfile = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: api.updateProfile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
 };

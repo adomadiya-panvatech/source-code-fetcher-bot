@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useOpportunities, useOpportunityStats, useDeleteOpportunity } from '@/hooks/useOpportunities';
 
 interface OpportunitiesProps {
   onOpenContactModal?: () => void;
@@ -15,64 +16,6 @@ interface OpportunitiesProps {
   onOpenSMSModal?: () => void;
   onOpenEmailModal?: () => void;
 }
-
-const fakeOpportunities = [
-  {
-    id: 1,
-    title: 'Enterprise Software License',
-    company: 'Tech Solutions Inc',
-    value: '$75,000',
-    stage: 'Proposal',
-    probability: '80%',
-    closeDate: '2024-02-15',
-    owner: 'John Smith',
-    status: 'hot'
-  },
-  {
-    id: 2,
-    title: 'Cloud Migration Project',
-    company: 'Global Corp',
-    value: '$120,000',
-    stage: 'Negotiation',
-    probability: '90%',
-    closeDate: '2024-01-30',
-    owner: 'Sarah Johnson',
-    status: 'hot'
-  },
-  {
-    id: 3,
-    title: 'Marketing Automation',
-    company: 'StartupXYZ',
-    value: '$25,000',
-    stage: 'Discovery',
-    probability: '40%',
-    closeDate: '2024-03-10',
-    owner: 'Mike Davis',
-    status: 'warm'
-  },
-  {
-    id: 4,
-    title: 'Security Audit Services',
-    company: 'Financial Services Ltd',
-    value: '$45,000',
-    stage: 'Qualification',
-    probability: '60%',
-    closeDate: '2024-02-28',
-    owner: 'Emily Chen',
-    status: 'warm'
-  },
-  {
-    id: 5,
-    title: 'Data Analytics Platform',
-    company: 'Retail Giant',
-    value: '$200,000',
-    stage: 'Prospecting',
-    probability: '20%',
-    closeDate: '2024-04-15',
-    owner: 'David Wilson',
-    status: 'cold'
-  }
-];
 
 const Opportunities: React.FC<OpportunitiesProps> = ({ 
   onOpenContactModal, 
@@ -85,10 +28,14 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStage, setFilterStage] = useState('all');
 
-  const filteredOpportunities = fakeOpportunities.filter(opp => {
-    const matchesSearch = opp.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         opp.company.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStage === 'all' || opp.stage.toLowerCase() === filterStage.toLowerCase();
+  const { data: opportunities = [], isLoading: opportunitiesLoading, error: opportunitiesError } = useOpportunities();
+  const { data: stats } = useOpportunityStats();
+  const deleteOpportunityMutation = useDeleteOpportunity();
+
+  const filteredOpportunities = opportunities.filter((opp: any) => {
+    const matchesSearch = opp.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         opp.company?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterStage === 'all' || opp.stage?.toLowerCase() === filterStage.toLowerCase();
     return matchesSearch && matchesFilter;
   });
 
@@ -111,6 +58,24 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const handleDeleteOpportunity = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this opportunity?')) {
+      deleteOpportunityMutation.mutate(id);
+    }
+  };
+
+  if (opportunitiesError) {
+    return (
+      <Layout>
+        <div className="p-6">
+          <div className="text-center py-8 text-red-600">
+            Error loading opportunities: {opportunitiesError.message}
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -136,8 +101,12 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
               <CardTitle className="text-sm font-medium text-gray-600">Total Value</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">$465,000</div>
-              <p className="text-sm text-green-600">+12% from last month</p>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats?.totalValue || '$465,000'}
+              </div>
+              <p className="text-sm text-green-600">
+                {stats?.valueGrowth || '+12% from last month'}
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -145,8 +114,12 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
               <CardTitle className="text-sm font-medium text-gray-600">Active Deals</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">5</div>
-              <p className="text-sm text-blue-600">2 closing this month</p>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats?.activeDeals || opportunities.length}
+              </div>
+              <p className="text-sm text-blue-600">
+                {stats?.closingThisMonth || '2 closing this month'}
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -154,7 +127,9 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
               <CardTitle className="text-sm font-medium text-gray-600">Win Rate</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">75%</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats?.winRate || '75%'}
+              </div>
               <p className="text-sm text-green-600">Above average</p>
             </CardContent>
           </Card>
@@ -163,7 +138,9 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
               <CardTitle className="text-sm font-medium text-gray-600">Avg Deal Size</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-gray-900">$93,000</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {stats?.avgDealSize || '$93,000'}
+              </div>
               <p className="text-sm text-gray-600">Last 30 days</p>
             </CardContent>
           </Card>
@@ -201,59 +178,70 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
             </div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Opportunity</TableHead>
-                    <TableHead>Company</TableHead>
-                    <TableHead>Value</TableHead>
-                    <TableHead>Stage</TableHead>
-                    <TableHead>Probability</TableHead>
-                    <TableHead>Close Date</TableHead>
-                    <TableHead>Owner</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOpportunities.map((opportunity) => (
-                    <TableRow key={opportunity.id} className="hover:bg-gray-50">
-                      <TableCell className="font-medium">{opportunity.title}</TableCell>
-                      <TableCell>{opportunity.company}</TableCell>
-                      <TableCell className="font-semibold text-green-600">{opportunity.value}</TableCell>
-                      <TableCell>
-                        <Badge className={getStageColor(opportunity.stage)}>
-                          {opportunity.stage}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{opportunity.probability}</TableCell>
-                      <TableCell>{opportunity.closeDate}</TableCell>
-                      <TableCell>{opportunity.owner}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(opportunity.status)}>
-                          {opportunity.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="sm">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+            {opportunitiesLoading ? (
+              <div className="text-center py-8 text-gray-500">
+                Loading opportunities...
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Opportunity</TableHead>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Value</TableHead>
+                      <TableHead>Stage</TableHead>
+                      <TableHead>Probability</TableHead>
+                      <TableHead>Close Date</TableHead>
+                      <TableHead>Owner</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            {filteredOpportunities.length === 0 && (
+                  </TableHeader>
+                  <TableBody>
+                    {filteredOpportunities.map((opportunity: any) => (
+                      <TableRow key={opportunity.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{opportunity.title || opportunity.name}</TableCell>
+                        <TableCell>{opportunity.company}</TableCell>
+                        <TableCell className="font-semibold text-green-600">{opportunity.value}</TableCell>
+                        <TableCell>
+                          <Badge className={getStageColor(opportunity.stage || 'Prospecting')}>
+                            {opportunity.stage || 'Prospecting'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{opportunity.probability || '0%'}</TableCell>
+                        <TableCell>{opportunity.closeDate || opportunity.expectedClose}</TableCell>
+                        <TableCell>{opportunity.owner || opportunity.assignedTo}</TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(opportunity.status || 'cold')}>
+                            {opportunity.status || 'cold'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm">
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleDeleteOpportunity(opportunity.id)}
+                              disabled={deleteOpportunityMutation.isPending}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+            {!opportunitiesLoading && filteredOpportunities.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 No opportunities found matching your criteria.
               </div>

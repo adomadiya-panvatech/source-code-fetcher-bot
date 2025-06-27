@@ -2,19 +2,39 @@
 import React, { useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { User, Camera, Mail, Phone, MapPin, Calendar, Edit3, Save, X } from 'lucide-react';
+import { useProfile, useUpdateProfile } from '@/hooks/useAuth';
 
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const { data: profileData, isLoading: profileLoading } = useProfile();
+  const updateProfileMutation = useUpdateProfile();
+  
   const [formData, setFormData] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@company.com',
-    phone: '+1 (555) 123-4567',
-    position: 'Sales Manager',
-    department: 'Sales',
-    location: 'New York, NY',
-    bio: 'Experienced sales professional with over 10 years in B2B sales and customer relationship management.',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    position: '',
+    department: '',
+    location: '',
+    bio: '',
   });
+
+  React.useEffect(() => {
+    if (profileData) {
+      const nameParts = profileData.name?.split(' ') || [];
+      setFormData({
+        firstName: nameParts[0] || '',
+        lastName: nameParts.slice(1).join(' ') || '',
+        email: profileData.email || '',
+        phone: profileData.phone || '',
+        position: profileData.position || 'Sales Manager',
+        department: profileData.department || 'Sales',
+        location: profileData.location || 'New York, NY',
+        bio: profileData.bio || 'Experienced sales professional with over 10 years in B2B sales and customer relationship management.',
+      });
+    }
+  }, [profileData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -23,11 +43,32 @@ const Profile = () => {
     });
   };
 
-  const handleSave = () => {
-    setIsEditing(false);
-    // Here you would typically save to backend
-    console.log('Profile updated:', formData);
+  const handleSave = async () => {
+    try {
+      const profileUpdate = {
+        ...formData,
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+      };
+      
+      await updateProfileMutation.mutateAsync(profileUpdate);
+      setIsEditing(false);
+      console.log('Profile updated successfully');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
   };
+
+  if (profileLoading) {
+    return (
+      <Layout>
+        <div className="p-6">
+          <div className="text-center py-8 text-gray-500">
+            Loading profile...
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -80,12 +121,13 @@ const Profile = () => {
                 <h3 className="text-xl font-semibold text-slate-800 dark:text-white">Personal Information</h3>
                 <button
                   onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-                  className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
+                  disabled={updateProfileMutation.isPending}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50"
                 >
                   {isEditing ? (
                     <>
                       <Save className="w-4 h-4" />
-                      <span>Save</span>
+                      <span>{updateProfileMutation.isPending ? 'Saving...' : 'Save'}</span>
                     </>
                   ) : (
                     <>

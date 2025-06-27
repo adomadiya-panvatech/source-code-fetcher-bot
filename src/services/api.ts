@@ -39,12 +39,6 @@ export const api = {
       body: JSON.stringify(credentials),
     }),
   
-  register: (userData: { email: string; password: string; name: string }) =>
-    apiRequest('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    }),
-  
   getProfile: () => apiRequest('/auth/me'),
   
   updateProfile: (profileData: any) =>
@@ -75,8 +69,6 @@ export const api = {
       method: 'DELETE',
     }),
   
-  exportContacts: () => apiRequest('/contacts/export'),
-  
   getContactStats: () => apiRequest('/contacts/stats'),
 
   // Leads endpoints
@@ -101,48 +93,29 @@ export const api = {
       method: 'DELETE',
     }),
   
-  assignLead: (id: string, userId: string) =>
-    apiRequest(`/leads/${id}/assign`, {
-      method: 'PUT',
-      body: JSON.stringify({ userId }),
-    }),
-  
   getLeadStats: () => apiRequest('/leads/stats'),
 
-  // Dashboard endpoints
-  getDashboardSummary: () => apiRequest('/dashboard/summary'),
+  // Opportunities endpoints
+  getOpportunities: () => apiRequest('/api/opportunities'),
   
-  getConversionRate: () => apiRequest('/dashboard/conversion-rate'),
-  
-  getTopPerformers: () => apiRequest('/dashboard/top-performers'),
-  
-  getMonthlyStats: () => apiRequest('/dashboard/monthly-stats'),
-  
-  getRecentActivity: () => apiRequest('/dashboard/recent-activity'),
-
-  // Users endpoints
-  getUsers: () => apiRequest('/users'),
-  
-  getUser: (id: string) => apiRequest(`/users/${id}`),
-  
-  updateUser: (id: string, userData: any) =>
-    apiRequest(`/users/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(userData),
+  createOpportunity: (opportunityData: any) =>
+    apiRequest('/api/opportunities', {
+      method: 'POST',
+      body: JSON.stringify(opportunityData),
     }),
   
-  deleteUser: (id: string) =>
-    apiRequest(`/users/${id}`, {
+  getOpportunity: (id: string) => apiRequest(`/api/opportunities/${id}`),
+  
+  updateOpportunity: (id: string, opportunityData: any) =>
+    apiRequest(`/api/opportunities/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(opportunityData),
+    }),
+  
+  deleteOpportunity: (id: string) =>
+    apiRequest(`/api/opportunities/${id}`, {
       method: 'DELETE',
     }),
   
-  getUserStats: () => apiRequest('/users/stats'),
-  
-  resetUserPassword: (id: string) =>
-    apiRequest(`/users/${id}/reset-password`, {
-      method: 'PUT',
-    }),
-
-  // System endpoints
-  healthCheck: () => apiRequest('/health'),
+  getOpportunityStats: () => apiRequest('/api/opportunities/stats'),
 };
