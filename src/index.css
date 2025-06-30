@@ -217,6 +217,34 @@
   .focus-visible-ring {
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
   }
+
+  /* Mobile-specific utilities */
+  .mobile-card-grid {
+    @apply grid grid-cols-1 gap-4 p-4;
+  }
+  
+  .mobile-only {
+    @apply block lg:hidden;
+  }
+  
+  .desktop-only {
+    @apply hidden lg:block;
+  }
+  
+  /* Improved mobile touch targets */
+  .touch-target {
+    @apply min-h-[48px] min-w-[48px] flex items-center justify-center;
+  }
+  
+  /* Mobile-optimized spacing */
+  .mobile-spacing {
+    @apply p-4 space-y-4;
+  }
+  
+  /* Card hover effects */
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-md hover:scale-[1.02] active:scale-[0.98];
+  }
 }
 
 /* Custom scrollbar for webkit browsers */
@@ -255,6 +283,14 @@
     animation: slideOutRight 0.3s ease-out;
   }
 
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+
   @keyframes slideInRight {
     from {
       transform: translateX(100%);
@@ -275,5 +311,54 @@
       transform: translateX(100%);
       opacity: 0;
     }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  /* Ensure proper touch scrolling */
+  body {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Optimize input fields for mobile */
+  input, textarea, select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Improve button accessibility on mobile */
+  button {
+    @apply touch-target;
+  }
+  
+  /* Card layout optimizations */
+  .mobile-card {
+    @apply bg-white rounded-lg shadow-sm border p-4 mb-4;
+    @apply card-hover;
+  }
+  
+  /* Better spacing for mobile content */
+  .mobile-content {
+    @apply px-4 py-2 space-y-4;
   }
 }

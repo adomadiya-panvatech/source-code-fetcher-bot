@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { TopBar } from '@/components/TopBar';
-import { MobileNav } from '@/components/MobileNav';
 import { ContactModal } from '@/components/ContactModal';
 import { LeadModal } from '@/components/LeadModal';
 import { OpportunityModal } from '@/components/OpportunityModal';
@@ -138,13 +137,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           <main className="flex-1 min-h-screen flex flex-col">
             <TopBar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
             
-            {/* Mobile Navigation */}
-            {isMobile && (
-              <MobileNav 
-                activeModule={activeModule} 
-                setActiveModule={setActiveModule} 
-              />
-            )}
+            {/* Removed MobileNav component - no more bottom navigation bar */}
             
             <div className="flex-1 overflow-auto">
               {childrenWithProps}
