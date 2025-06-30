@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { X, TrendingUp, DollarSign, Calendar, Building2, User } from 'lucide-react';
 import { useUpdateOpportunity } from '@/hooks/useOpportunities';
@@ -5,14 +6,17 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Opportunity {
   id: string;
-  title: string;
+  title?: string;
+  opportunity?: string;
   description?: string;
   value: number;
   stage?: string;
   probability?: number;
   expectedCloseDate?: string;
+  close_date?: string;
   contactId?: string;
   accountId?: string;
+  company?: string;
   notes?: string;
 }
 
@@ -43,12 +47,12 @@ export const OpportunityEditModal: React.FC<OpportunityEditModalProps> = ({
   useEffect(() => {
     if (opportunity) {
       setFormData({
-        name: opportunity.opportunity || '',
+        name: opportunity.opportunity || opportunity.title || '',
         account: opportunity.company || '',
         amount: opportunity.value?.toString() || '',
         stage: opportunity.stage || 'prospecting',
         probability: opportunity.probability?.toString() || '',
-        closeDate: opportunity.close_date || '',
+        closeDate: opportunity.close_date || opportunity.expectedCloseDate || '',
         description: opportunity.description || '',
       });
     }
