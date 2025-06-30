@@ -13,14 +13,15 @@ import {
   Mail,
   MessageCircle,
   Home,
-  Settings,
   HelpCircle,
-  User
+  User,
+  X
 } from 'lucide-react';
 
 interface SidebarProps {
   activeModule: string;
   setActiveModule: (module: string) => void;
+  onClose?: () => void;
 }
 
 const modules = [
@@ -40,17 +41,17 @@ const communicationSubModules = [
 
 const bottomModules = [
   { id: 'profile', label: 'Profile', icon: User, path: '/profile' },
-  // { id: 'settings', label: 'Settings', icon: Settings, path: '/settings' },
   { id: 'help', label: 'Help & Support', icon: HelpCircle, path: '/help' },
 ];
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleModuleClick = (module: { id: string; path: string }) => {
     setActiveModule(module.id);
     navigate(module.path);
+    onClose?.(); // Close mobile sidebar after navigation
   };
 
   const getCurrentActiveModule = () => {
@@ -65,7 +66,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule 
   const currentActiveModule = getCurrentActiveModule();
 
   return (
-    <div className="w-64 h-screen bg-white/10 dark:bg-slate-800/50 backdrop-blur-xl border-r border-white/20 dark:border-slate-700/50 shadow-xl flex flex-col">
+    <div className="w-64 h-screen bg-white/10 dark:bg-slate-800/50 backdrop-blur-xl border-r border-white/20 dark:border-slate-700/50 shadow-xl flex flex-col lg:w-64 lg:relative lg:translate-x-0">
+      {/* Mobile Close Button */}
+      {onClose && (
+        <div className="flex justify-end p-4 lg:hidden">
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg bg-white/20 dark:bg-slate-700/50 hover:bg-white/30 dark:hover:bg-slate-600/50 transition-all duration-200"
+          >
+            <X className="w-5 h-5 text-slate-600 dark:text-slate-300" />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="p-6 border-b border-white/20 dark:border-slate-700/50">
         <div className="flex items-center space-x-3 mb-2">
@@ -103,12 +116,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule 
                       )}
                     >
                       <Icon className={cn(
-                        "w-5 h-5 transition-all duration-200",
+                        "w-5 h-5 transition-all duration-200 flex-shrink-0",
                         isActive ? "scale-110 text-white" : "group-hover:scale-105"
                       )} />
-                      <span className="font-medium text-sm">{module.label}</span>
+                      <span className="font-medium text-sm truncate">{module.label}</span>
                       {isActive && (
-                        <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                        <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse flex-shrink-0"></div>
                       )}
                     </button>
                     
@@ -122,11 +135,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule 
                               key={subModule.id}
                               className="w-full flex items-center justify-between space-x-3 px-3 py-2 rounded-lg text-sm text-slate-500 dark:text-slate-400 hover:bg-white/10 dark:hover:bg-slate-700/30 hover:text-slate-700 dark:hover:text-slate-200 transition-all duration-200 group"
                             >
-                              <div className="flex items-center space-x-3">
-                                <SubIcon className="w-4 h-4 group-hover:scale-105 transition-transform" />
-                                <span>{subModule.label}</span>
+                              <div className="flex items-center space-x-3 min-w-0">
+                                <SubIcon className="w-4 h-4 group-hover:scale-105 transition-transform flex-shrink-0" />
+                                <span className="truncate">{subModule.label}</span>
                               </div>
-                              <span className="text-xs bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded-full">
+                              <span className="text-xs bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded-full flex-shrink-0">
                                 {subModule.count}
                               </span>
                             </button>
@@ -159,8 +172,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule 
                     : "text-slate-600 dark:text-slate-300 hover:bg-white/20 dark:hover:bg-slate-700/50 hover:text-slate-800 dark:hover:text-white"
                 )}
               >
-                <Icon className="w-5 h-5 group-hover:scale-105 transition-transform duration-200" />
-                <span className="font-medium text-sm">{module.label}</span>
+                <Icon className="w-5 h-5 group-hover:scale-105 transition-transform duration-200 flex-shrink-0" />
+                <span className="font-medium text-sm truncate">{module.label}</span>
               </button>
             );
           })}
@@ -169,7 +182,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule 
         {/* User Info */}
         <div className="mt-4 p-3 bg-white/10 dark:bg-slate-700/30 rounded-xl">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-xs">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
               JD
             </div>
             <div className="flex-1 min-w-0">

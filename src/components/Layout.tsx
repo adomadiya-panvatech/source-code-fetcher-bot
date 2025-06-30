@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { TopBar } from '@/components/TopBar';
+import { MobileNav } from '@/components/MobileNav';
 import { ContactModal } from '@/components/ContactModal';
 import { LeadModal } from '@/components/LeadModal';
 import { OpportunityModal } from '@/components/OpportunityModal';
@@ -19,6 +19,7 @@ import { ViewLeadModal } from "@/components/modals/ViewLeadModal";
 import { ViewOpportunityModal } from "@/components/modals/ViewOpportunityModal";
 import { ViewAccountModal } from "@/components/modals/ViewAccountModal";
 import { ViewCommunicationModal } from "@/components/modals/ViewCommunicationModal";
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -26,6 +27,9 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [activeModule, setActiveModule] = useState('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const isMobile = useIsMobile();
+  
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isEditContactModalOpen, setIsEditContactModalOpen] = useState(false);
   const [isViewContactModalOpen, setIsViewContactModalOpen] = useState(false);
@@ -53,11 +57,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSMSModalOpen, setIsSMSModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   
-  // Communication modal state
   const [isViewCommunicationModalOpen, setIsViewCommunicationModalOpen] = useState(false);
   const [viewCommunication, setViewCommunication] = useState(null);
 
-  // Create a context or props to pass modal handlers down
   const childrenWithProps = React.cloneElement(children as React.ReactElement, {
     onOpenContactModal: () => setIsContactModalOpen(true),
     onOpenEditContactModal: (contact) => {
@@ -106,12 +108,47 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <ThemeProvider>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-all duration-500">
-        <div className="flex w-full">
-          <Sidebar activeModule={activeModule} setActiveModule={setActiveModule} />
+        <div className="flex w-full relative">
+          {/* Desktop Sidebar */}
+          {!isMobile && (
+            <Sidebar activeModule={activeModule} setActiveModule={setActiveModule} />
+          )}
           
-          <main className="flex-1 min-h-screen">
-            <TopBar />
-            {childrenWithProps}
+          {/* Mobile Sidebar Overlay */}
+          {isMobile && isSidebarOpen && (
+            <div 
+              className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+              onClick={() => setIsSidebarOpen(false)}
+            />
+          )}
+          
+          {/* Mobile Sidebar */}
+          {isMobile && (
+            <div className={`fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
+              isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}>
+              <Sidebar 
+                activeModule={activeModule} 
+                setActiveModule={setActiveModule}
+                onClose={() => setIsSidebarOpen(false)}
+              />
+            </div>
+          )}
+          
+          <main className="flex-1 min-h-screen flex flex-col">
+            <TopBar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+            
+            {/* Mobile Navigation */}
+            {isMobile && (
+              <MobileNav 
+                activeModule={activeModule} 
+                setActiveModule={setActiveModule} 
+              />
+            )}
+            
+            <div className="flex-1 overflow-auto">
+              {childrenWithProps}
+            </div>
           </main>
         </div>
         
@@ -229,7 +266,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           onClose={() => setIsEmailModalOpen(false)} 
         />
         
-        {/* Communication View Modal */}
         <ViewCommunicationModal
           open={isViewCommunicationModalOpen}
           onClose={() => {
@@ -239,11 +275,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           communication={viewCommunication}
           onEdit={() => {
             setIsViewCommunicationModalOpen(false);
-            // Handle edit functionality here if needed
           }}
         />
         
-        {/* ChatBot */}
         <ChatBot />
       </div>
     </ThemeProvider>

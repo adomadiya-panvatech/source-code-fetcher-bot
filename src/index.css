@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -37,19 +38,12 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -99,5 +93,187 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Responsive utilities */
+@layer utilities {
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+  
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  /* Mobile-first responsive grid utilities */
+  .grid-responsive {
+    @apply grid gap-4;
+    @apply grid-cols-1;
+    @apply md:grid-cols-2;
+    @apply lg:grid-cols-3;
+    @apply xl:grid-cols-4;
+  }
+
+  .grid-responsive-2 {
+    @apply grid gap-4;
+    @apply grid-cols-1;
+    @apply md:grid-cols-2;
+  }
+
+  .grid-responsive-3 {
+    @apply grid gap-4;
+    @apply grid-cols-1;
+    @apply md:grid-cols-2;
+    @apply lg:grid-cols-3;
+  }
+
+  /* Responsive text utilities */
+  .text-responsive-sm {
+    @apply text-xs;
+    @apply md:text-sm;
+  }
+
+  .text-responsive-base {
+    @apply text-sm;
+    @apply md:text-base;
+  }
+
+  .text-responsive-lg {
+    @apply text-base;
+    @apply md:text-lg;
+  }
+
+  .text-responsive-xl {
+    @apply text-lg;
+    @apply md:text-xl;
+  }
+
+  .text-responsive-2xl {
+    @apply text-xl;
+    @apply md:text-2xl;
+  }
+
+  /* Responsive padding utilities */
+  .p-responsive {
+    @apply p-4;
+    @apply md:p-6;
+    @apply lg:p-8;
+  }
+
+  .px-responsive {
+    @apply px-4;
+    @apply md:px-6;
+    @apply lg:px-8;
+  }
+
+  .py-responsive {
+    @apply py-4;
+    @apply md:py-6;
+    @apply lg:py-8;
+  }
+
+  /* Touch-friendly button sizes */
+  .btn-touch {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Safe area insets for mobile devices */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Responsive container */
+  .container-responsive {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Focus states for accessibility */
+  .focus-visible-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
+  }
+}
+
+/* Custom scrollbar for webkit browsers */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(203 213 225) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgb(203 213 225);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(148 163 184);
+  }
+}
+
+/* Animation utilities */
+@layer utilities {
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  .animate-slide-out-right {
+    animation: slideOutRight 0.3s ease-out;
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideOutRight {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
   }
 }
