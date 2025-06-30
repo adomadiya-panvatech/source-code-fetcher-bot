@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
 import { X, TrendingUp, User, Building2, DollarSign, Calendar } from 'lucide-react';
+import { useCreateOpportunity } from '@/hooks/useOpportunities';
+import { useToast } from '@/hooks/use-toast';
 
 interface OpportunityModalProps {
   isOpen: boolean;
@@ -20,21 +22,49 @@ export const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onCl
     description: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const createOpportunityMutation = useCreateOpportunity();
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Opportunity data:', formData);
-    onClose();
-    setFormData({
-      name: '',
-      account: '',
-      contact: '',
-      stage: 'prospecting',
-      amount: '',
-      closeDate: '',
-      probability: '',
-      source: '',
-      description: ''
-    });
+
+    const payload = {
+      opportunity: formData.name,
+      company: formData.account,
+      value: parseFloat(formData.amount),
+      stage: formData.stage,
+      probability: parseInt(formData.probability),
+      close_date: formData.closeDate,
+      description: formData.description
+    };
+
+    try {
+      await createOpportunityMutation.mutateAsync(payload);
+      toast({
+        title: "Success",
+        description: "Opportunity creted successfully",
+      });
+      onClose();
+      setFormData({
+        name: '',
+        account: '',
+        contact: '',
+        stage: 'prospecting',
+        amount: '',
+        closeDate: '',
+        probability: '',
+        source: '',
+        description: ''
+      });
+    } catch (error) {
+      console.error('Error updating opportunity:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update opportunity. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -63,7 +93,7 @@ export const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onCl
             <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
@@ -80,7 +110,7 @@ export const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onCl
                 placeholder="Enter opportunity name"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 <Building2 className="w-4 h-4 inline mr-1" />
@@ -97,23 +127,23 @@ export const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onCl
               />
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                <User className="w-4 h-4 inline mr-1" />
-                Primary Contact
+                <DollarSign className="w-4 h-4 inline mr-1" />
+                Amount
               </label>
               <input
-                type="text"
-                name="contact"
-                value={formData.contact}
+                type="number"
+                name="amount"
+                value={formData.amount}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
-                placeholder="Select contact"
+                placeholder="0.00"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Stage
@@ -134,23 +164,9 @@ export const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onCl
               </select>
             </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                <DollarSign className="w-4 h-4 inline mr-1" />
-                Amount
-              </label>
-              <input
-                type="number"
-                name="amount"
-                value={formData.amount}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
-                placeholder="0.00"
-              />
-            </div>
-            
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 <Calendar className="w-4 h-4 inline mr-1" />
@@ -164,7 +180,7 @@ export const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onCl
                 className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Probability (%)
@@ -181,7 +197,7 @@ export const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onCl
               />
             </div>
           </div>
-          
+
           <div className="mb-6">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Description
@@ -195,7 +211,7 @@ export const OpportunityModal: React.FC<OpportunityModalProps> = ({ isOpen, onCl
               placeholder="Additional details about this opportunity..."
             />
           </div>
-          
+
           <div className="flex justify-end space-x-3">
             <button
               type="button"

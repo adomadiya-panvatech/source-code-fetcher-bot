@@ -1,156 +1,199 @@
-
 import React, { useState, useEffect } from 'react';
-import { X, TrendingUp } from 'lucide-react';
+import { X, TrendingUp, DollarSign, Calendar, Building2, User } from 'lucide-react';
+import { useUpdateOpportunity } from '@/hooks/useOpportunities';
+import { useToast } from '@/hooks/use-toast';
+
+interface Opportunity {
+  id: string;
+  title: string;
+  description?: string;
+  value: number;
+  stage?: string;
+  probability?: number;
+  expectedCloseDate?: string;
+  contactId?: string;
+  accountId?: string;
+  notes?: string;
+}
 
 interface OpportunityEditModalProps {
   isOpen: boolean;
   onClose: () => void;
-  opportunity: any;
+  opportunity: Opportunity | null;
 }
 
-export const OpportunityEditModal: React.FC<OpportunityEditModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  opportunity 
+export const OpportunityEditModal: React.FC<OpportunityEditModalProps> = ({
+  isOpen,
+  onClose,
+  opportunity
 }) => {
   const [formData, setFormData] = useState({
-    title: '',
-    company: '',
-    value: '',
-    stage: 'Prospecting',
+    name: '',
+    account: '',
+    amount: '',
+    stage: 'prospecting',
     probability: '',
     closeDate: '',
-    owner: '',
-    status: 'cold'
+    description: ''
   });
+
+  const updateOpportunityMutation = useUpdateOpportunity();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (opportunity) {
       setFormData({
-        title: opportunity.title || opportunity.name || '',
-        company: opportunity.company || '',
-        value: opportunity.value || '',
-        stage: opportunity.stage || 'Prospecting',
-        probability: opportunity.probability || '',
-        closeDate: opportunity.closeDate || opportunity.expectedClose || '',
-        owner: opportunity.owner || opportunity.assignedTo || '',
-        status: opportunity.status || 'cold'
+        name: opportunity.opportunity || '',
+        account: opportunity.company || '',
+        amount: opportunity.value?.toString() || '',
+        stage: opportunity.stage || 'prospecting',
+        probability: opportunity.probability?.toString() || '',
+        closeDate: opportunity.close_date || '',
+        description: opportunity.description || '',
       });
     }
   }, [opportunity]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Updated opportunity data:', formData);
-    onClose();
+
+    if (!opportunity) return;
+
+    try {
+      await updateOpportunityMutation.mutateAsync({
+        id: opportunity.id,
+        data: {
+          opportunity: formData.name,
+          company: formData.account,
+          value: parseFloat(formData.amount),
+          stage: formData.stage,
+          probability: parseInt(formData.probability),
+          close_date: formData.closeDate,
+          description: formData.description
+        }
+      });
+      toast({
+        title: "Success",
+        description: "Opportunity updated successfully",
+      });
+      onClose();
+    } catch (error) {
+      console.error('Error updating opportunity:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update opportunity. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !opportunity) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 dark:border-slate-700/50 w-full max-w-2xl mx-4 animate-scale-in">
+        <div className="flex items-center justify-between p-6 border-b border-white/20 dark:border-slate-700/30">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
               <TrendingUp className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Edit Opportunity</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Update opportunity information</p>
+              <h2 className="text-xl font-semibold text-slate-800 dark:text-white">Edit Opportunity</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Update opportunity information</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-            <X className="w-5 h-5" />
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-white/20 dark:hover:bg-slate-700/50 rounded-xl transition-colors duration-200"
+          >
+            <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Opportunity Name *
               </label>
               <input
                 type="text"
-                name="title"
-                value={formData.title}
+                name="name"
+                value={formData.name}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+                placeholder="Enter opportunity name"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Company
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <Building2 className="w-4 h-4 inline mr-1" />
+                Account *
               </label>
               <input
                 type="text"
-                name="company"
-                value={formData.company}
+                name="account"
+                value={formData.account}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                required
+                className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+                placeholder="Select or enter account"
               />
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Value
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <DollarSign className="w-4 h-4 inline mr-1" />
+                Amount
               </label>
               <input
-                type="text"
-                name="value"
-                value={formData.value}
+                type="number"
+                name="amount"
+                value={formData.amount}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+                placeholder="0.00"
               />
             </div>
-            
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Stage
               </label>
               <select
                 name="stage"
                 value={formData.stage}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
               >
-                <option value="Prospecting">Prospecting</option>
-                <option value="Discovery">Discovery</option>
-                <option value="Qualification">Qualification</option>
-                <option value="Proposal">Proposal</option>
-                <option value="Negotiation">Negotiation</option>
+                <option value="prospecting">Prospecting</option>
+                <option value="qualification">Qualification</option>
+                <option value="needs-analysis">Needs Analysis</option>
+                <option value="proposal">Proposal</option>
+                <option value="negotiation">Negotiation</option>
+                <option value="closed-won">Closed Won</option>
+                <option value="closed-lost">Closed Lost</option>
               </select>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Probability (%)
-              </label>
-              <input
-                type="text"
-                name="probability"
-                value={formData.probability}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <Calendar className="w-4 h-4 inline mr-1" />
                 Close Date
               </label>
               <input
@@ -158,55 +201,55 @@ export const OpportunityEditModal: React.FC<OpportunityEditModalProps> = ({
                 name="closeDate"
                 value={formData.closeDate}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
               />
             </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Owner
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Probability (%)
               </label>
               <input
-                type="text"
-                name="owner"
-                value={formData.owner}
+                type="number"
+                name="probability"
+                value={formData.probability}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                min="0"
+                max="100"
+                className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+                placeholder="0"
               />
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Status
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="hot">Hot</option>
-                <option value="warm">Warm</option>
-                <option value="cold">Cold</option>
-              </select>
-            </div>
           </div>
-          
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              Description
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              rows={3}
+              className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200 resize-none"
+              placeholder="Additional details about this opportunity..."
+            />
+          </div>
+
           <div className="flex justify-end space-x-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+              className="px-6 py-3 bg-white/50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-white/70 dark:hover:bg-slate-600/50 transition-all duration-200 font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
+              disabled={updateOpportunityMutation.isPending}
+              className="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Save Changes
+              {updateOpportunityMutation.isPending ? 'Updating...' : 'Update Opportunity'}
             </button>
           </div>
         </form>

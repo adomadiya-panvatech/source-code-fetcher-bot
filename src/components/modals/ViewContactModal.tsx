@@ -2,14 +2,14 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
-interface ContactViewModalProps {
+interface ViewContactModalProps {
   open: boolean;
   onClose: () => void;
   contact: any;
   onEdit: () => void;
 }
 
-export const ContactViewModal: React.FC<ContactViewModalProps> = ({ open, onClose, contact, onEdit }) => {
+export const ViewContactModal: React.FC<ViewContactModalProps> = ({ open, onClose, contact, onEdit }) => {
   if (!contact) return null;
 
   return (

@@ -28,15 +28,6 @@ const Index: React.FC<IndexProps> = ({
 }) => {
   const quickLinks = [
     { 
-      title: 'CRM Dashboard', 
-      description: 'Customer management system', 
-      icon: Database, 
-      path: '/crm',
-      color: 'from-indigo-500 to-blue-600',
-      count: 'New Interface',
-      trend: 'Try it now'
-    },
-    { 
       title: 'Opportunities', 
       description: 'Manage sales pipeline', 
       icon: TrendingUp, 
@@ -215,7 +206,7 @@ const Index: React.FC<IndexProps> = ({
         {/* Quick Access Cards */}
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-slate-800 dark:text-white mb-6">Quick Access</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {quickLinks.map((link) => {
               const Icon = link.icon;
               return (
@@ -247,11 +238,11 @@ const Index: React.FC<IndexProps> = ({
         </div>
         
         {/* Bottom Section */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          <div className="xl:col-span-2">
+        <div className="grid grid-cols-1 xl:grid-cols-6 gap-6">
+          <div className="xl:col-span-6">
             <RecentActivities />
           </div>
-          <div>
+          {/* <div>
             <QuickActions 
               onAddContact={onOpenContactModal}
               onAddLead={onOpenLeadModal}
@@ -260,7 +251,7 @@ const Index: React.FC<IndexProps> = ({
               onOpenSMSModal={onOpenSMSModal}
               onOpenEmailModal={onOpenEmailModal}
             />
-          </div>
+          </div> */}
         </div>
       </div>
     </Layout>

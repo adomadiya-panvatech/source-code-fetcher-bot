@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
 import { X, Building2, Mail, Phone, MapPin, Globe, Users } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useCreateAccount } from '@/hooks/useAccounts';
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -22,23 +24,55 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
     description: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const createAccountMutation = useCreateAccount();
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Account data:', formData);
-    onClose();
-    setFormData({
-      name: '',
-      industry: '',
-      type: 'prospect',
-      website: '',
-      phone: '',
-      email: '',
-      billingAddress: '',
-      shippingAddress: '',
-      employees: '',
-      revenue: '',
-      description: ''
-    });
+
+    const payload = {
+      name: formData.name,
+      industry: formData.industry,
+      type: formData.type,
+      website: formData.website,
+      phone: formData.phone,
+      email: formData.email,
+      billing_address: formData.billingAddress,
+      shipping_address: formData.shippingAddress,
+      employees: formData.employees,
+      revenue: formData.revenue,
+      description: formData.description,
+    };
+
+    try {
+      await createAccountMutation.mutateAsync(payload);
+      toast({
+        title: "Success",
+        description: "Account created successfully",
+      });
+      setFormData({
+        name: '',
+        industry: '',
+        type: 'prospect',
+        website: '',
+        phone: '',
+        email: '',
+        billingAddress: '',
+        shippingAddress: '',
+        employees: '',
+        revenue: '',
+        description: ''
+      });
+      onClose();
+    } catch (error) {
+      console.error('Error creating account:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create account. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -67,7 +101,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
             <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
@@ -84,7 +118,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
                 placeholder="Enter account name"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Industry
@@ -106,7 +140,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
               </select>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -124,7 +158,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
                 <option value="vendor">Vendor</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 <Globe className="w-4 h-4 inline mr-1" />
@@ -140,7 +174,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
               />
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -156,7 +190,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
                 placeholder="Enter phone number"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 <Mail className="w-4 h-4 inline mr-1" />
@@ -172,28 +206,23 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
               />
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                <Users className="w-4 h-4 inline mr-1" />
                 Number of Employees
               </label>
-              <select
+              <input
+                type="number"
                 name="employees"
                 value={formData.employees}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
-              >
-                <option value="">Select Size</option>
-                <option value="1-10">1-10</option>
-                <option value="11-50">11-50</option>
-                <option value="51-200">51-200</option>
-                <option value="201-1000">201-1000</option>
-                <option value="1000+">1000+</option>
-              </select>
+                placeholder="Enter annual revenue"
+              />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Annual Revenue
@@ -208,7 +237,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
               />
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -224,7 +253,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
                 placeholder="Enter billing address"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 <MapPin className="w-4 h-4 inline mr-1" />
@@ -240,7 +269,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
               />
             </div>
           </div>
-          
+
           <div className="mb-6">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Description
@@ -254,7 +283,7 @@ export const AccountModal: React.FC<AccountModalProps> = ({ isOpen, onClose }) =
               placeholder="Additional notes about this account..."
             />
           </div>
-          
+
           <div className="flex justify-end space-x-3">
             <button
               type="button"

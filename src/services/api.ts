@@ -1,3 +1,4 @@
+
 const API_BASE_URL = 'http://localhost:5000';
 
 // API utility functions
@@ -21,18 +22,13 @@ export const apiRequest = async (endpoint: string, options: RequestInit = {}) =>
     };
   }
 
-  try {
-    const response = await fetch(url, config);
-    
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
-    
-    return response.json();
-  } catch (error) {
-    console.error(`API request failed for ${endpoint}:`, error);
-    throw error;
+  const response = await fetch(url, config);
+  
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status} ${response.statusText}`);
   }
+  
+  return response.json();
 };
 
 export const api = {
@@ -122,6 +118,30 @@ export const api = {
     }),
   
   getOpportunityStats: () => apiRequest('/api/opportunities/stats'),
+
+  // Accounts endpoints
+  getAccounts: () => apiRequest('/users'),
+  
+  createAccount: (accountData: any) =>
+    apiRequest('/users', {
+      method: 'POST',
+      body: JSON.stringify(accountData),
+    }),
+  
+  getAccount: (id: string) => apiRequest(`/users/${id}`),
+  
+  updateAccount: (id: string, accountData: any) =>
+    apiRequest(`/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(accountData),
+    }),
+  
+  deleteAccount: (id: string) =>
+    apiRequest(`/users/${id}`, {
+      method: 'DELETE',
+    }),
+  
+  getAccountStats: () => apiRequest('/users/stats'),
 
   // Dashboard endpoints
   getDashboardSummary: () => apiRequest('/dashboard/summary'),

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Layout } from '@/components/Layout';
 import { Search, Filter, MoreHorizontal, Eye, Edit2, Trash2 } from 'lucide-react';
@@ -7,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useOpportunities, useOpportunityStats, useDeleteOpportunity } from '@/hooks/useOpportunities';
-import { OpportunityViewModal } from '@/components/OpportunityViewModal';
-import { OpportunityEditModal } from '@/components/OpportunityEditModal';
+import { useToast } from '@/hooks/use-toast';
 
 interface OpportunitiesProps {
   onOpenContactModal?: () => void;
@@ -17,29 +15,38 @@ interface OpportunitiesProps {
   onOpenAccountModal?: () => void;
   onOpenSMSModal?: () => void;
   onOpenEmailModal?: () => void;
+  onOpenEditContactModal?: (contact: any) => void;
+  onOpenEditLeadModal?: (lead: any) => void;
+  onOpenEditOpportunityModal?: (opportunity: any) => void;
+  onOpenViewOpportunityModal?: (opportunity: any) => void;
+  onOpenEditAccountModal?: (account: any) => void;
 }
 
-const Opportunities: React.FC<OpportunitiesProps> = ({ 
-  onOpenContactModal, 
+const Opportunities: React.FC<OpportunitiesProps> = ({
+  onOpenContactModal,
   onOpenLeadModal,
   onOpenOpportunityModal,
   onOpenAccountModal,
   onOpenSMSModal,
-  onOpenEmailModal
+  onOpenEmailModal,
+  onOpenEditContactModal,
+  onOpenEditLeadModal,
+  onOpenEditOpportunityModal,
+  onOpenViewOpportunityModal,
+  onOpenEditAccountModal
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStage, setFilterStage] = useState('all');
-  const [selectedOpportunity, setSelectedOpportunity] = useState<any>(null);
-  const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
 
-  const { data: opportunities = [], isLoading: opportunitiesLoading, error: opportunitiesError } = useOpportunities();
-  const { data: stats } = useOpportunityStats();
+  const { data: response, isLoading: opportunitiesLoading, error: opportunitiesError } = useOpportunities();
+  const opportunities = response?.data ?? [];
+
   const deleteOpportunityMutation = useDeleteOpportunity();
+  const { toast } = useToast();
 
   const filteredOpportunities = opportunities.filter((opp: any) => {
-    const matchesSearch = opp.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         opp.company?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = opp.opportunity?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      opp.company?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStage === 'all' || opp.stage?.toLowerCase() === filterStage.toLowerCase();
     return matchesSearch && matchesFilter;
   });
@@ -64,25 +71,35 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
     }
   };
 
-  const handleDeleteOpportunity = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this opportunity?')) {
-      deleteOpportunityMutation.mutate(id);
+  const handleDeleteOpportunity = async (id: string, name: string) => {
+    if (window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
+      try {
+        await deleteOpportunityMutation.mutateAsync(id);
+        toast({
+          title: "Success",
+          description: `${name} has been deleted successfully`,
+        });
+      } catch (error) {
+        console.error('Error deleting opportunity:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete opportunity. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleEditOpportunity = (opportunity: any) => {
+    if (onOpenEditOpportunityModal) {
+      onOpenEditOpportunityModal(opportunity);
     }
   };
 
   const handleViewOpportunity = (opportunity: any) => {
-    setSelectedOpportunity(opportunity);
-    setViewModalOpen(true);
-  };
-
-  const handleEditOpportunity = (opportunity: any) => {
-    setSelectedOpportunity(opportunity);
-    setEditModalOpen(true);
-  };
-
-  const handleEditFromView = () => {
-    setViewModalOpen(false);
-    setEditModalOpen(true);
+    if (onOpenViewOpportunityModal) {
+      onOpenViewOpportunityModal(opportunity);
+    }
   };
 
   if (opportunitiesError) {
@@ -106,64 +123,12 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
             <h1 className="text-3xl font-bold text-gray-900">Opportunities</h1>
             <p className="text-gray-600 mt-1">Manage your sales opportunities and track deals</p>
           </div>
-          <Button 
+          <Button
             onClick={onOpenOpportunityModal}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             Add Opportunity
           </Button>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Total Value</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-gray-900">
-                {stats?.totalValue || '$465,000'}
-              </div>
-              <p className="text-sm text-green-600">
-                {stats?.valueGrowth || '+12% from last month'}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Active Deals</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-gray-900">
-                {stats?.activeDeals || opportunities.length}
-              </div>
-              <p className="text-sm text-blue-600">
-                {stats?.closingThisMonth || '2 closing this month'}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Win Rate</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-gray-900">
-                {stats?.winRate || '75%'}
-              </div>
-              <p className="text-sm text-green-600">Above average</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Avg Deal Size</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-gray-900">
-                {stats?.avgDealSize || '$93,000'}
-              </div>
-              <p className="text-sm text-gray-600">Last 30 days</p>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Filters and Search */}
@@ -213,7 +178,6 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
                       <TableHead>Stage</TableHead>
                       <TableHead>Probability</TableHead>
                       <TableHead>Close Date</TableHead>
-                      <TableHead>Owner</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
@@ -221,7 +185,7 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
                   <TableBody>
                     {filteredOpportunities.map((opportunity: any) => (
                       <TableRow key={opportunity.id} className="hover:bg-gray-50">
-                        <TableCell className="font-medium">{opportunity.title || opportunity.name}</TableCell>
+                        <TableCell className="font-medium">{opportunity.opportunity}</TableCell>
                         <TableCell>{opportunity.company}</TableCell>
                         <TableCell className="font-semibold text-green-600">{opportunity.value}</TableCell>
                         <TableCell>
@@ -230,8 +194,8 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
                           </Badge>
                         </TableCell>
                         <TableCell>{opportunity.probability || '0%'}</TableCell>
-                        <TableCell>{opportunity.closeDate || opportunity.expectedClose}</TableCell>
-                        <TableCell>{opportunity.owner || opportunity.assignedTo}</TableCell>
+                        <TableCell>{opportunity.close_date || opportunity.expectedClose}</TableCell>
+                        {/* <TableCell>{opportunity.owner || opportunity.assignedTo}</TableCell> */}
                         <TableCell>
                           <Badge className={getStatusColor(opportunity.status || 'cold')}>
                             {opportunity.status || 'cold'}
@@ -253,10 +217,10 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
                             >
                               <Edit2 className="w-4 h-4" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="sm"
-                              onClick={() => handleDeleteOpportunity(opportunity.id)}
+                              onClick={() => handleDeleteOpportunity(opportunity.id, opportunity.title || opportunity.name)}
                               disabled={deleteOpportunityMutation.isPending}
                             >
                               <Trash2 className="w-4 h-4" />
@@ -277,24 +241,6 @@ const Opportunities: React.FC<OpportunitiesProps> = ({
           </CardContent>
         </Card>
       </div>
-
-      {/* Modals */}
-      {selectedOpportunity && (
-        <>
-          <OpportunityViewModal
-            isOpen={viewModalOpen}
-            onClose={() => setViewModalOpen(false)}
-            opportunity={selectedOpportunity}
-            onEdit={handleEditFromView}
-          />
-          
-          <OpportunityEditModal
-            isOpen={editModalOpen}
-            onClose={() => setEditModalOpen(false)}
-            opportunity={selectedOpportunity}
-          />
-        </>
-      )}
     </Layout>
   );
 };

@@ -3,56 +3,85 @@ import React from 'react';
 import { TrendingUp, Users, Code, Target, Eye, Edit } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
-const statsData = [
-  {
-    title: 'Total Customers',
-    value: '1,248',
-    change: '+12.5% from last month',
-    changeType: 'positive',
-    icon: Users,
-    color: 'blue'
-  },
-  {
-    title: 'Active Users',
-    value: '962',
-    change: '+8.2% from last month',
-    changeType: 'positive',
-    icon: TrendingUp,
-    color: 'green'
-  },
-  {
-    title: 'API Requests',
-    value: '24,456',
-    change: '+22.3% from last month',
-    changeType: 'positive',
-    icon: Code,
-    color: 'purple'
-  },
-  {
-    title: 'Conversion Rate',
-    value: '4.8%',
-    change: '-1.2% from last month',
-    changeType: 'negative',
-    icon: Target,
-    color: 'yellow'
-  }
-];
-
-const recentApiCalls = [
-  { method: 'GET', endpoint: '/api/customers', status: 'Success', time: '2s ago' },
-  { method: 'POST', endpoint: '/api/customers', status: 'Created', time: '5m ago' },
-  { method: 'PATCH', endpoint: '/api/customers/123', status: 'Success', time: '12m ago' },
-  { method: 'GET', endpoint: '/api/analytics', status: 'Success', time: '1h ago' },
-  { method: 'DELETE', endpoint: '/api/customers/456', status: 'Failed', time: '2h ago' }
-];
-
-const recentCustomers = [
-  { id: 'JD', name: 'John Doe', customerId: '#4532', status: 'Active', email: 'john.doe@example.com', lastActive: '2 hours ago' },
-  { id: 'AS', name: 'Alice Smith', customerId: '#4531', status: 'Active', email: 'alice.smith@example.com', lastActive: '1 day ago' }
-];
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/services/api';
 
 export const CRMDashboard: React.FC = () => {
+  // API Queries
+  const { data: summaryData, isLoading: summaryLoading } = useQuery({
+    queryKey: ['dashboard-summary'],
+    queryFn: () => api.getDashboardSummary(),
+  });
+
+  const { data: conversionData, isLoading: conversionLoading } = useQuery({
+    queryKey: ['dashboard-conversion-rate'],
+    queryFn: () => api.getConversionRate(),
+  });
+
+  const { data: topPerformersData, isLoading: topPerformersLoading } = useQuery({
+    queryKey: ['dashboard-top-performers'],
+    queryFn: () => api.getTopPerformers(),
+  });
+
+  const { data: monthlyStatsData, isLoading: monthlyStatsLoading } = useQuery({
+    queryKey: ['dashboard-monthly-stats'],
+    queryFn: () => api.getMonthlyStats(),
+  });
+
+  const { data: recentActivityData, isLoading: recentActivityLoading } = useQuery({
+    queryKey: ['dashboard-recent-activity'],
+    queryFn: () => api.getRecentActivity(),
+  });
+
+  // Fallback data for when API is loading or fails
+  const defaultStatsData = [
+    {
+      title: 'Total Customers',
+      value: summaryData?.totalCustomers || '1,248',
+      change: summaryData?.customerChange || '+12.5% from last month',
+      changeType: 'positive',
+      icon: Users,
+      color: 'blue'
+    },
+    {
+      title: 'Active Users',
+      value: summaryData?.activeUsers || '962',
+      change: summaryData?.activeUserChange || '+8.2% from last month',
+      changeType: 'positive',
+      icon: TrendingUp,
+      color: 'green'
+    },
+    {
+      title: 'API Requests',
+      value: summaryData?.apiRequests || '24,456',
+      change: summaryData?.apiRequestChange || '+22.3% from last month',
+      changeType: 'positive',
+      icon: Code,
+      color: 'purple'
+    },
+    {
+      title: 'Conversion Rate',
+      value: conversionData?.rate || '4.8%',
+      change: conversionData?.change || '-1.2% from last month',
+      changeType: conversionData?.changeType || 'negative',
+      icon: Target,
+      color: 'yellow'
+    }
+  ];
+
+  const defaultRecentApiCalls = recentActivityData?.apiCalls || [
+    { method: 'GET', endpoint: '/api/customers', status: 'Success', time: '2s ago' },
+    { method: 'POST', endpoint: '/api/customers', status: 'Created', time: '5m ago' },
+    { method: 'PATCH', endpoint: '/api/customers/123', status: 'Success', time: '12m ago' },
+    { method: 'GET', endpoint: '/api/analytics', status: 'Success', time: '1h ago' },
+    { method: 'DELETE', endpoint: '/api/customers/456', status: 'Failed', time: '2h ago' }
+  ];
+
+  const defaultRecentCustomers = recentActivityData?.customers || [
+    { id: 'JD', name: 'John Doe', customerId: '#4532', status: 'Active', email: 'john.doe@example.com', lastActive: '2 hours ago' },
+    { id: 'AS', name: 'Alice Smith', customerId: '#4531', status: 'Active', email: 'alice.smith@example.com', lastActive: '1 day ago' }
+  ];
+
   const getMethodColor = (method: string) => {
     switch (method) {
       case 'GET': return 'text-blue-600 bg-blue-50';
@@ -72,6 +101,27 @@ export const CRMDashboard: React.FC = () => {
     }
   };
 
+  if (summaryLoading || conversionLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -81,7 +131,7 @@ export const CRMDashboard: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statsData.map((stat) => {
+        {defaultStatsData.map((stat) => {
           const Icon = stat.icon;
           return (
             <Card key={stat.title} className="relative overflow-hidden">
@@ -129,9 +179,15 @@ export const CRMDashboard: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="h-48 flex items-center justify-center text-gray-500">
-              <p>Chart visualization would go here</p>
-            </div>
+            {monthlyStatsLoading ? (
+              <div className="h-48 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : (
+              <div className="h-48 flex items-center justify-center text-gray-500">
+                <p>Monthly stats: {monthlyStatsData ? JSON.stringify(monthlyStatsData) : 'Chart visualization would go here'}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -141,20 +197,33 @@ export const CRMDashboard: React.FC = () => {
             <CardTitle>Recent API Calls</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {recentApiCalls.map((call, index) => (
-                <div key={index} className="flex items-center space-x-3 py-2">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${getMethodColor(call.method)}`}>
-                    {call.method}
-                  </span>
-                  <span className="flex-1 text-sm text-gray-900 font-mono">{call.endpoint}</span>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(call.status)}`}>
-                    {call.status}
-                  </span>
-                  <span className="text-xs text-gray-500">{call.time}</span>
-                </div>
-              ))}
-            </div>
+            {recentActivityLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="animate-pulse flex items-center space-x-3 py-2">
+                    <div className="h-6 w-12 bg-gray-200 rounded"></div>
+                    <div className="h-4 bg-gray-200 rounded flex-1"></div>
+                    <div className="h-6 w-16 bg-gray-200 rounded"></div>
+                    <div className="h-4 w-12 bg-gray-200 rounded"></div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {defaultRecentApiCalls.map((call, index) => (
+                  <div key={index} className="flex items-center space-x-3 py-2">
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${getMethodColor(call.method)}`}>
+                      {call.method}
+                    </span>
+                    <span className="flex-1 text-sm text-gray-900 font-mono">{call.endpoint}</span>
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(call.status)}`}>
+                      {call.status}
+                    </span>
+                    <span className="text-xs text-gray-500">{call.time}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -182,7 +251,7 @@ export const CRMDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {recentCustomers.map((customer, index) => (
+                {defaultRecentCustomers.map((customer, index) => (
                   <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-4 px-4">
                       <div className="flex items-center space-x-3">

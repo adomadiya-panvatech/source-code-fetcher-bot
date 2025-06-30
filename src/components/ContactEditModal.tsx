@@ -1,6 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { X, User, Mail, Phone, Building2, MapPin } from 'lucide-react';
 import { useUpdateContact } from '@/hooks/useContacts';
+import { useToast } from '@/hooks/use-toast';
 
 interface Contact {
   id: string;
@@ -13,6 +15,7 @@ interface Contact {
   source?: string;
   status?: string;
   notes?: string;
+  tags?: string;
 }
 
 interface ContactEditModalProps {
@@ -28,35 +31,33 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     name: '',
-    firstName: '',
-    lastName: '',
     email: '',
     phone: '',
     company: '',
     position: '',
     address: '',
     notes: '',
-    source: 'Website',
-    status: 'active'
+    source: 'website',
+    status: 'active',
+    tags: ''
   });
 
   const updateContactMutation = useUpdateContact();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (contact) {
-      const nameParts = contact.name.split(' ');
       setFormData({
         name: contact.name,
-        firstName: nameParts[0] || '',
-        lastName: nameParts.slice(1).join(' ') || '',
         email: contact.email,
         phone: contact.phone || '',
         company: contact.company || '',
         position: contact.position || '',
         address: contact.address || '',
         notes: contact.notes || '',
-        source: contact.source || 'Website',
-        status: contact.status || 'active'
+        source: contact.source || 'website',
+        status: contact.status || 'active',
+        tags: contact.tags || ''
       });
     }
   }, [contact]);
@@ -67,16 +68,19 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
     if (!contact) return;
     
     try {
-      const contactData = {
-        ...formData,
-        name: `${formData.firstName} ${formData.lastName}`.trim() || formData.name,
-      };
-      
-      await updateContactMutation.mutateAsync({ id: contact.id, data: contactData });
-      console.log('Contact updated successfully');
+      await updateContactMutation.mutateAsync({ id: contact.id, data: formData });
+      toast({
+        title: "Success",
+        description: "Contact updated successfully",
+      });
       onClose();
     } catch (error) {
       console.error('Error updating contact:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update contact. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -111,36 +115,19 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
         </div>
         
         <form onSubmit={handleSubmit} className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                First Name *
-              </label>
-              <input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
-                placeholder="Enter first name"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Last Name *
-              </label>
-              <input
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
-                placeholder="Enter last name"
-              />
-            </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              Name *
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              required
+              className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+              placeholder="Enter contact name"
+            />
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -206,7 +193,7 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
               />
             </div>
           </div>
-
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -218,12 +205,12 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
               >
-                <option value="Website">Website</option>
-                <option value="LinkedIn">LinkedIn</option>
-                <option value="Referral">Referral</option>
-                <option value="Cold Call">Cold Call</option>
-                <option value="Trade Show">Trade Show</option>
-                <option value="Other">Other</option>
+                <option value="website">Website</option>
+                <option value="referral">Referral</option>
+                <option value="social_media">Social Media</option>
+                <option value="advertisement">Advertisement</option>
+                <option value="trade_show">Trade Show</option>
+                <option value="cold_call">Cold Call</option>
               </select>
             </div>
             
@@ -238,8 +225,9 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
                 className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
               >
                 <option value="active">Active</option>
-                <option value="prospect">Prospect</option>
                 <option value="inactive">Inactive</option>
+                <option value="prospect">Prospect</option>
+                <option value="customer">Customer</option>
               </select>
             </div>
           </div>
@@ -256,6 +244,20 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({
               onChange={handleInputChange}
               className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
               placeholder="Enter address"
+            />
+          </div>
+          
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              Tags
+            </label>
+            <input
+              type="text"
+              name="tags"
+              value={formData.tags}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 bg-white/50 dark:bg-slate-700/50 border border-white/30 dark:border-slate-600/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent backdrop-blur-sm transition-all duration-200"
+              placeholder="Enter tags (comma separated)"
             />
           </div>
           

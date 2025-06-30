@@ -1,14 +1,12 @@
-
 import React, { useState } from 'react';
 import { Layout } from '@/components/Layout';
-import { Search, Filter, MoreHorizontal, Eye, Edit2, Phone, Mail, User, Users } from 'lucide-react';
+import { Search, Filter, MoreHorizontal, Eye, Edit2, Trash2, Users, UserCheck, Phone, Mail } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useContacts, useContactStats, useDeleteContact } from '@/hooks/useContacts';
-import { ContactViewModal } from '@/components/ContactViewModal';
-import { ContactEditModal } from '@/components/ContactEditModal';
+import { useToast } from '@/hooks/use-toast';
 
 interface ContactsProps {
   onOpenContactModal?: () => void;
@@ -17,98 +15,85 @@ interface ContactsProps {
   onOpenAccountModal?: () => void;
   onOpenSMSModal?: () => void;
   onOpenEmailModal?: () => void;
+  onOpenEditContactModal?: (contact: any) => void;
+  onOpenViewContactModal?: (contact: any) => void;
 }
 
-const Contacts: React.FC<ContactsProps> = ({ 
-  onOpenContactModal, 
+const Contacts: React.FC<ContactsProps> = ({
+  onOpenContactModal,
   onOpenLeadModal,
   onOpenOpportunityModal,
   onOpenAccountModal,
   onOpenSMSModal,
-  onOpenEmailModal
+  onOpenEmailModal,
+  onOpenEditContactModal,
+  onOpenViewContactModal
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [selectedContact, setSelectedContact] = useState<any>(null);
-  const [viewModalOpen, setViewModalOpen] = useState(false);
-  const [editModalOpen, setEditModalOpen] = useState(false);
 
-  const { data: contacts = [], isLoading: contactsLoading, error: contactsError } = useContacts();
-  const { data: stats, error: statsError } = useContactStats();
+  const { data: contactsResponse, isLoading: contactsLoading, error: contactsError } = useContacts();
+  const contacts = Array.isArray(contactsResponse?.data) ? contactsResponse.data : [];
+
+  const { data: stats } = useContactStats();
+
   const deleteContactMutation = useDeleteContact();
+  const { toast } = useToast();
 
-  // Handle potential data issues
-  const safeContacts = Array.isArray(contacts) ? contacts : [];
-  const safeStats = stats || {};
-
-  const filteredContacts = safeContacts.filter((contact: any) => {
-    if (!contact) return false;
-    
-    const name = contact.name || '';
-    const email = contact.email || '';
-    const company = contact.company || '';
-    
-    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         company.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || (contact.status || 'active').toLowerCase() === filterStatus.toLowerCase();
+  const filteredContacts = Array.isArray(contacts) ? contacts.filter((contact: any) => {
+    const matchesSearch = contact.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.company?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || contact.status?.toLowerCase() === filterStatus.toLowerCase();
     return matchesSearch && matchesFilter;
-  });
+  }) : [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800';
+      case 'inactive': return 'bg-red-100 text-red-800';
       case 'prospect': return 'bg-blue-100 text-blue-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
+      case 'customer': return 'bg-purple-100 text-purple-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const getSourceColor = (source: string) => {
-    switch (source) {
-      case 'Website': return 'bg-blue-100 text-blue-800';
-      case 'Referral': return 'bg-green-100 text-green-800';
-      case 'LinkedIn': return 'bg-purple-100 text-purple-800';
-      case 'Cold Call': return 'bg-orange-100 text-orange-800';
-      case 'Trade Show': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const handleDeleteContact = async (id: string, name: string) => {
+    if (window.confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
+      try {
+        await deleteContactMutation.mutateAsync(id);
+        toast({
+          title: "Success",
+          description: `${name} has been deleted successfully`,
+        });
+      } catch (error) {
+        console.error('Error deleting contact:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete contact. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const handleDeleteContact = (id: string) => {
-    if (window.confirm('Are you sure you want to delete this contact?')) {
-      deleteContactMutation.mutate(id);
+  const handleEditContact = (contact: any) => {
+    if (onOpenEditContactModal) {
+      onOpenEditContactModal(contact);
     }
   };
 
   const handleViewContact = (contact: any) => {
-    setSelectedContact(contact);
-    setViewModalOpen(true);
+    if (onOpenViewContactModal) {
+      onOpenViewContactModal(contact);
+    }
   };
 
-  const handleEditContact = (contact: any) => {
-    setSelectedContact(contact);
-    setEditModalOpen(true);
-  };
-
-  const handleEditFromView = () => {
-    setViewModalOpen(false);
-    setEditModalOpen(true);
-  };
-
-  // Error handling
   if (contactsError) {
-    console.error('Contacts error:', contactsError);
     return (
       <Layout>
         <div className="p-6">
-          <div className="text-center py-8">
-            <div className="text-red-600 mb-4">
-              Unable to load contacts. Please try again.
-            </div>
-            <Button onClick={() => window.location.reload()}>
-              Refresh Page
-            </Button>
+          <div className="text-center py-8 text-red-600">
+            Error loading contacts: {contactsError.message}
           </div>
         </div>
       </Layout>
@@ -122,9 +107,9 @@ const Contacts: React.FC<ContactsProps> = ({
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Contacts</h1>
-            <p className="text-gray-600 mt-1">Manage your business contacts and relationships</p>
+            <p className="text-gray-600 mt-1">Manage your customer and prospect relationships</p>
           </div>
-          <Button 
+          <Button
             onClick={onOpenContactModal}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
@@ -143,26 +128,26 @@ const Contacts: React.FC<ContactsProps> = ({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">
-                {safeStats.total || safeContacts.length}
+                {stats?.total || contacts.length}
               </div>
               <p className="text-sm text-green-600">
-                {safeStats.growth || '+2 this week'}
+                {stats?.growth || '+5 this week'}
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                <User className="w-4 h-4" />
+                <UserCheck className="w-4 h-4" />
                 Active Contacts
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">
-                {safeStats.active || safeContacts.filter((c: any) => (c?.status || 'active') === 'active').length}
+                {stats?.active || contacts.filter((c: any) => c.status === 'active').length}
               </div>
               <p className="text-sm text-blue-600">
-                {safeStats.engagement || '60% engagement'}
+                {stats?.activeGrowth || '10% increase'}
               </p>
             </CardContent>
           </Card>
@@ -170,28 +155,28 @@ const Contacts: React.FC<ContactsProps> = ({
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
                 <Phone className="w-4 h-4" />
-                Recent Calls
+                Call Activity
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">
-                {safeStats.recentCalls || '12'}
+                {stats?.calls || '250'}
               </div>
-              <p className="text-sm text-green-600">This week</p>
+              <p className="text-sm text-green-600">Monthly calls</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
                 <Mail className="w-4 h-4" />
-                Email Response
+                Email Engagement
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-gray-900">
-                {safeStats.emailResponse || '85%'}
+                {stats?.emails || '120'}
               </div>
-              <p className="text-sm text-green-600">Response rate</p>
+              <p className="text-sm text-purple-600">Emails sent</p>
             </CardContent>
           </Card>
         </div>
@@ -217,10 +202,11 @@ const Contacts: React.FC<ContactsProps> = ({
                   onChange={(e) => setFilterStatus(e.target.value)}
                   className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="all">All Status</option>
+                  <option value="all">All Statuses</option>
                   <option value="active">Active</option>
-                  <option value="prospect">Prospect</option>
                   <option value="inactive">Inactive</option>
+                  <option value="prospect">Prospect</option>
+                  <option value="customer">Customer</option>
                 </select>
               </div>
             </div>
@@ -236,80 +222,57 @@ const Contacts: React.FC<ContactsProps> = ({
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
-                      <TableHead>Company</TableHead>
-                      <TableHead>Position</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Phone</TableHead>
-                      <TableHead>Source</TableHead>
+                      <TableHead>Company</TableHead>
+                      <TableHead>Position</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Last Contact</TableHead>
-                      <TableHead>Tags</TableHead>
-                      <TableHead className="w-[150px]">Actions</TableHead>
+                      <TableHead>Source</TableHead>
+                      <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredContacts.map((contact: any, index: number) => {
-                      // Provide fallback id if contact doesn't have one
-                      const contactId = contact?.id || `contact-${index}`;
-                      
-                      return (
-                        <TableRow key={contactId} className="hover:bg-gray-50">
-                          <TableCell className="font-medium">{contact?.name || 'N/A'}</TableCell>
-                          <TableCell>{contact?.company || 'N/A'}</TableCell>
-                          <TableCell>{contact?.position || 'N/A'}</TableCell>
-                          <TableCell className="text-blue-600">{contact?.email || 'N/A'}</TableCell>
-                          <TableCell className="text-gray-600">{contact?.phone || 'N/A'}</TableCell>
-                          <TableCell>
-                            <Badge className={getSourceColor(contact?.source || 'Other')}>
-                              {contact?.source || 'Other'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getStatusColor(contact?.status || 'active')}>
-                              {contact?.status || 'active'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{contact?.lastContact || contact?.updatedAt || 'N/A'}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-1 flex-wrap">
-                              {(contact?.tags || []).slice(0, 2).map((tag: string, tagIndex: number) => (
-                                <Badge key={tagIndex} variant="outline" className="text-xs">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => handleViewContact(contact)}
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleEditContact(contact)}
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </Button>
-                              {onOpenSMSModal && (
-                                <Button variant="ghost" size="sm" onClick={onOpenSMSModal}>
-                                  <Phone className="w-4 h-4" />
-                                </Button>
-                              )}
-                              {onOpenEmailModal && (
-                                <Button variant="ghost" size="sm" onClick={onOpenEmailModal}>
-                                  <Mail className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                    {filteredContacts.map((contact: any) => (
+                      <TableRow key={contact.id} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{contact.name}</TableCell>
+                        <TableCell>{contact.email}</TableCell>
+                        <TableCell>{contact.phone}</TableCell>
+                        <TableCell>{contact.company}</TableCell>
+                        <TableCell>{contact.position}</TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(contact.status || 'inactive')}>
+                            {contact.status || 'inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{contact.source}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleViewContact(contact)}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleEditContact(contact)}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteContact(contact.id, contact.name)}
+                              disabled={deleteContactMutation.isPending}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </div>
@@ -322,24 +285,6 @@ const Contacts: React.FC<ContactsProps> = ({
           </CardContent>
         </Card>
       </div>
-
-      {/* Modals */}
-      {selectedContact && (
-        <>
-          <ContactViewModal
-            isOpen={viewModalOpen}
-            onClose={() => setViewModalOpen(false)}
-            contact={selectedContact}
-            onEdit={handleEditFromView}
-          />
-          
-          <ContactEditModal
-            isOpen={editModalOpen}
-            onClose={() => setEditModalOpen(false)}
-            contact={selectedContact}
-          />
-        </>
-      )}
     </Layout>
   );
 };
