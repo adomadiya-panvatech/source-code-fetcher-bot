@@ -50,17 +50,19 @@ const Index: React.FC<IndexProps> = ({
   });
 
   // Calculate stats from real data
-  const contactsCount = contactsData?.length || 0;
-  const leadsCount = leadsData?.length || 0;
-  const opportunitiesCount = opportunitiesData?.length || 0;
-  const accountsCount = accountsData?.length || 0;
+  const contactsCount = contactsData?.data?.length || 0;
+  const leadsCount = leadsData?.data?.length || 0;
+  const opportunitiesCount = opportunitiesData?.data?.length || 0;
+  const accountsCount = accountsData?.data?.length || 0;
 
+  console.log("leadsData", leadsData);
+  
   // Calculate hot leads and active opportunities
-  const hotLeadsCount = leadsData?.filter(lead => lead.status === 'hot')?.length || 0;
-  const activeOpportunities = opportunitiesData?.filter(opp => opp.status === 'active')?.length || 0;
+  const hotLeadsCount = leadsData?.data?.filter(lead => lead.status === 'hot')?.length || 0;
+  const activeOpportunities = opportunitiesData?.data?.filter(opp => opp.status === 'active')?.length || 0;
 
   // Calculate pipeline value
-  const pipelineValue = opportunitiesData?.reduce((sum, opp) => sum + (opp.value || 0), 0) || 0;
+  const pipelineValue = opportunitiesData?.data?.reduce((sum, opp) => sum + (opp.value || 0), 0) || 0;
 
   const quickLinks = [
     { 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { X, TrendingUp, DollarSign, Calendar, Building2, User } from 'lucide-react';
 import { useUpdateOpportunity } from '@/hooks/useOpportunities';
@@ -15,8 +14,6 @@ interface Opportunity {
   contactId?: string;
   accountId?: string;
   notes?: string;
-  company?: string;
-  close_date?: string;
 }
 
 interface OpportunityEditModalProps {
@@ -46,16 +43,17 @@ export const OpportunityEditModal: React.FC<OpportunityEditModalProps> = ({
   useEffect(() => {
     if (opportunity) {
       setFormData({
-        name: opportunity.title || '',
+        name: opportunity.opportunity || '',
         account: opportunity.company || '',
         amount: opportunity.value?.toString() || '',
         stage: opportunity.stage || 'prospecting',
         probability: opportunity.probability?.toString() || '',
-        closeDate: opportunity.close_date || opportunity.expectedCloseDate || '',
+        closeDate: opportunity.close_date || '',
         description: opportunity.description || '',
       });
     }
   }, [opportunity]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,12 +64,12 @@ export const OpportunityEditModal: React.FC<OpportunityEditModalProps> = ({
       await updateOpportunityMutation.mutateAsync({
         id: opportunity.id,
         data: {
-          title: formData.name,
+          opportunity: formData.name,
           company: formData.account,
           value: parseFloat(formData.amount),
           stage: formData.stage,
           probability: parseInt(formData.probability),
-          expectedCloseDate: formData.closeDate,
+          close_date: formData.closeDate,
           description: formData.description
         }
       });
