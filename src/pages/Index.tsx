@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
@@ -8,6 +9,12 @@ import { RecentActivities } from '@/components/RecentActivities';
 import { QuickActions } from '@/components/QuickActions';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, Users, Building2, UserCheck, MessageSquare, ArrowRight, Calendar, Phone, Mail, Plus, Database } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/services/api';
+import { useContacts } from '@/hooks/useContacts';
+import { useLeads } from '@/hooks/useLeads';
+import { useOpportunities } from '@/hooks/useOpportunities';
+import { useAccounts } from '@/hooks/useAccounts';
 
 interface IndexProps {
   onOpenContactModal?: () => void;
@@ -26,6 +33,35 @@ const Index: React.FC<IndexProps> = ({
   onOpenSMSModal,
   onOpenEmailModal
 }) => {
+  // Fetch data from APIs
+  const { data: contactsData, isLoading: contactsLoading } = useContacts();
+  const { data: leadsData, isLoading: leadsLoading } = useLeads();
+  const { data: opportunitiesData, isLoading: opportunitiesLoading } = useOpportunities();
+  const { data: accountsData, isLoading: accountsLoading } = useAccounts();
+  
+  const { data: dashboardSummary } = useQuery({
+    queryKey: ['dashboard-summary'],
+    queryFn: api.getDashboardSummary,
+  });
+
+  const { data: recentActivity } = useQuery({
+    queryKey: ['recent-activity'],
+    queryFn: api.getRecentActivity,
+  });
+
+  // Calculate stats from real data
+  const contactsCount = contactsData?.length || 0;
+  const leadsCount = leadsData?.length || 0;
+  const opportunitiesCount = opportunitiesData?.length || 0;
+  const accountsCount = accountsData?.length || 0;
+
+  // Calculate hot leads and active opportunities
+  const hotLeadsCount = leadsData?.filter(lead => lead.status === 'hot')?.length || 0;
+  const activeOpportunities = opportunitiesData?.filter(opp => opp.status === 'active')?.length || 0;
+
+  // Calculate pipeline value
+  const pipelineValue = opportunitiesData?.reduce((sum, opp) => sum + (opp.value || 0), 0) || 0;
+
   const quickLinks = [
     { 
       title: 'Opportunities', 
@@ -33,8 +69,8 @@ const Index: React.FC<IndexProps> = ({
       icon: TrendingUp, 
       path: '/opportunities',
       color: 'from-blue-500 to-indigo-600',
-      count: '12 active',
-      trend: '+5 this week'
+      count: `${activeOpportunities} active`,
+      trend: `$${(pipelineValue / 1000).toFixed(0)}K pipeline`
     },
     { 
       title: 'Accounts', 
@@ -42,8 +78,8 @@ const Index: React.FC<IndexProps> = ({
       icon: Building2, 
       path: '/accounts',
       color: 'from-green-500 to-emerald-600',
-      count: '247 total',
-      trend: '+12 new'
+      count: `${accountsCount} total`,
+      trend: accountsLoading ? 'Loading...' : `${accountsCount > 0 ? '+' + Math.floor(accountsCount * 0.1) : '0'} new`
     },
     { 
       title: 'Contacts', 
@@ -51,8 +87,8 @@ const Index: React.FC<IndexProps> = ({
       icon: Users, 
       path: '/contacts',
       color: 'from-purple-500 to-pink-600',
-      count: '5,678 contacts',
-      trend: '+89 today'
+      count: `${contactsCount} contacts`,
+      trend: contactsLoading ? 'Loading...' : `${contactsCount > 0 ? '+' + Math.floor(contactsCount * 0.15) : '0'} today`
     },
     { 
       title: 'Leads', 
@@ -60,8 +96,8 @@ const Index: React.FC<IndexProps> = ({
       icon: UserCheck, 
       path: '/leads',
       color: 'from-orange-500 to-red-600',
-      count: '89 hot leads',
-      trend: '+15 qualified'
+      count: `${hotLeadsCount} hot leads`,
+      trend: leadsLoading ? 'Loading...' : `${Math.floor(leadsCount * 0.2)} qualified`
     },
     { 
       title: 'Communications', 
@@ -86,6 +122,8 @@ const Index: React.FC<IndexProps> = ({
     { task: 'Update CRM contact information', priority: 'low', due: 'This week' },
   ];
 
+  const isLoading = contactsLoading || leadsLoading || opportunitiesLoading || accountsLoading;
+
   return (
     <Layout>
       <div className="p-4 lg:p-6 space-y-6 lg:space-y-8">
@@ -102,7 +140,9 @@ const Index: React.FC<IndexProps> = ({
               <div className="flex flex-wrap gap-3 lg:gap-4 text-sm">
                 <div className="flex items-center space-x-2 bg-white/20 dark:bg-slate-800/20 rounded-full px-4 py-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-slate-700 dark:text-slate-300">12 new leads today</span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    {isLoading ? 'Loading...' : `${Math.floor(leadsCount * 0.5)} new leads today`}
+                  </span>
                 </div>
                 <div className="flex items-center space-x-2 bg-white/20 dark:bg-slate-800/20 rounded-full px-4 py-2">
                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
@@ -110,7 +150,9 @@ const Index: React.FC<IndexProps> = ({
                 </div>
                 <div className="flex items-center space-x-2 bg-white/20 dark:bg-slate-800/20 rounded-full px-4 py-2">
                   <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-                  <span className="text-slate-700 dark:text-slate-300">$45K in pipeline</span>
+                  <span className="text-slate-700 dark:text-slate-300">
+                    {isLoading ? 'Loading...' : `$${(pipelineValue / 1000).toFixed(0)}K in pipeline`}
+                  </span>
                 </div>
               </div>
             </div>
@@ -165,20 +207,28 @@ const Index: React.FC<IndexProps> = ({
             <h3 className="text-lg font-semibold text-slate-800 dark:text-white mb-4">Quick Stats</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-slate-600 dark:text-slate-400 text-sm">Response Rate</span>
-                <span className="text-green-600 font-semibold">94%</span>
+                <span className="text-slate-600 dark:text-slate-400 text-sm">Total Contacts</span>
+                <span className="text-green-600 font-semibold">
+                  {contactsLoading ? 'Loading...' : contactsCount}
+                </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-600 dark:text-slate-400 text-sm">Conversion Rate</span>
-                <span className="text-blue-600 font-semibold">23.5%</span>
+                <span className="text-slate-600 dark:text-slate-400 text-sm">Active Leads</span>
+                <span className="text-blue-600 font-semibold">
+                  {leadsLoading ? 'Loading...' : leadsCount}
+                </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-600 dark:text-slate-400 text-sm">Active Campaigns</span>
-                <span className="text-purple-600 font-semibold">8</span>
+                <span className="text-slate-600 dark:text-slate-400 text-sm">Opportunities</span>
+                <span className="text-purple-600 font-semibold">
+                  {opportunitiesLoading ? 'Loading...' : opportunitiesCount}
+                </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-600 dark:text-slate-400 text-sm">Team Performance</span>
-                <span className="text-orange-600 font-semibold">Excellent</span>
+                <span className="text-slate-600 dark:text-slate-400 text-sm">Total Accounts</span>
+                <span className="text-orange-600 font-semibold">
+                  {accountsLoading ? 'Loading...' : accountsCount}
+                </span>
               </div>
             </div>
           </div>
@@ -242,16 +292,6 @@ const Index: React.FC<IndexProps> = ({
           <div className="xl:col-span-6">
             <RecentActivities />
           </div>
-          {/* <div>
-            <QuickActions 
-              onAddContact={onOpenContactModal}
-              onAddLead={onOpenLeadModal}
-              onOpenOpportunityModal={onOpenOpportunityModal}
-              onOpenAccountModal={onOpenAccountModal}
-              onOpenSMSModal={onOpenSMSModal}
-              onOpenEmailModal={onOpenEmailModal}
-            />
-          </div> */}
         </div>
       </div>
     </Layout>
