@@ -14,7 +14,7 @@ interface CommunicationsProps {
   onOpenAccountModal?: () => void;
   onOpenSMSModal?: () => void;
   onOpenEmailModal?: () => void;
-  onOpenViewCommunicationModal?: () => void;
+  onOpenViewCommunicationModal?: (communication: any) => void;
 }
 
 const fakeCommunications = [
